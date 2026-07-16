@@ -1,0 +1,32 @@
+{
+  "Vantec": {
+    "Tornado TD8038H": { "Size": "80mm", "Speed": "5700 RPM", "Airflow": "84.1 CFM", "Noise": "55.2 dBA", "Released": "2001" },
+    "Stealth SF12025L": { "Size": "120mm", "Speed": "1500 RPM", "Airflow": "53.0 CFM", "Noise": "28.0 dBA", "Released": "2003" }
+  },
+  "Scythe": {
+    "GentleTyphoon AP-15": { "Size": "120mm", "Speed": "1850 RPM", "Airflow": "58.3 CFM", "Noise": "28.0 dBA", "Released": "2008" },
+    "Slip Stream 120": { "Size": "120mm", "Speed": "1200 RPM", "Airflow": "68.5 CFM", "Noise": "24.0 dBA", "Released": "2009" },
+    "Kaze Flex 120 PWM": { "Size": "120mm", "Speed": "1800 RPM", "Airflow": "79.7 CFM", "Noise": "35.8 dBA", "Released": "2017" }
+  },
+  "Noctua": {
+    "NF-S12-800": { "Size": "120mm", "Speed": "800 RPM", "Airflow": "34.7 CFM", "Noise": "8.5 dBA", "Released": "2006" },
+    "NF-P12": { "Size": "120mm", "Speed": "1300 RPM", "Airflow": "54.3 CFM", "Noise": "19.8 dBA", "Released": "2007" },
+    "NF-A14 PWM": { "Size": "140mm", "Speed": "1500 RPM", "Airflow": "82.5 CFM", "Noise": "24.6 dBA", "Released": "2013" },
+    "NF-A12x25 PWM": { "Size": "120mm", "Speed": "2000 RPM", "Airflow": "60.0 CFM", "Noise": "22.6 dBA", "Released": "2018" },
+    "NF-A14x25 G2 PWM": { "Size": "140mm", "Speed": "1500 RPM", "Airflow": "91.5 CFM", "Noise": "22.0 dBA", "Released": "2024" }
+  },
+  "Corsair": {
+    "SP120 High Performance": { "Size": "120mm", "Speed": "2350 RPM", "Airflow": "62.7 CFM", "Noise": "35.0 dBA", "Released": "2012" },
+    "AF140 Quiet Edition": { "Size": "140mm", "Speed": "1150 RPM", "Airflow": "67.8 CFM", "Noise": "24.0 dBA", "Released": "2012" },
+    "LL120 RGB Dual Light Loop": { "Size": "120mm", "Speed": "1500 RPM", "Airflow": "43.2 CFM", "Noise": "24.8 dBA", "Released": "2017" },
+    "QL120 RGB": { "Size": "120mm", "Speed": "1500 RPM", "Airflow": "41.8 CFM", "Noise": "26.0 dBA", "Released": "2019" },
+    "iCUE LINK QX120 RGB": { "Size": "120mm", "Speed": "2400 RPM", "Airflow": "63.1 CFM", "Noise": "37.0 dBA", "Released": "2023" },
+    "iCUE LINK RX140 RGB": { "Size": "140mm", "Speed": "1800 RPM", "Airflow": "95.7 CFM", "Noise": "36.0 dBA", "Released": "2024" }
+  },
+  "Lian Li": {
+    "Bora Lite 120": { "Size": "120mm", "Speed": "1500 RPM", "Airflow": "48.3 CFM", "Noise": "27.2 dBA", "Released": "2018" },
+    "Uni Fan SL120": { "Size": "120mm", "Speed": "1900 RPM", "Airflow": "58.5 CFM", "Noise": "31.0 dBA", "Released": "2020" },
+    "Uni Fan AL120 V2": { "Size": "120mm", "Speed": "2000 RPM", "Airflow": "64.5 CFM", "Noise": "28.7 dBA", "Released": "2023" },
+    "Uni Fan TL LCD 120": { "Size": "120mm", "Speed": "1900 RPM", "Airflow": "62.0 CFM", "Noise": "27.0 dBA", "Released": "2024" }
+  }
+}

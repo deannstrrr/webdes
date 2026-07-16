@@ -1,0 +1,35 @@
+{
+  "Crucial": {
+    "PC133 SDRAM": { "Type": "SDR", "Speed": "133 MHz", "Voltage": "3.3V", "Format": "DIMM", "Released": "2000" },
+    "Ballistix DDR-400": { "Type": "DDR1", "Speed": "400 MHz", "Voltage": "2.6V", "Format": "DIMM", "Released": "2004" },
+    "Ballistix Tracer DDR2": { "Type": "DDR2", "Speed": "800 MHz", "Voltage": "2.2V", "Format": "DIMM", "Released": "2007" },
+    "Tactical Tracer DDR3": { "Type": "DDR3", "Speed": "1600 MHz", "Voltage": "1.5V", "Format": "DIMM", "Released": "2012" },
+    "Ballistix Max DDR4": { "Type": "DDR4", "Speed": "4400 MHz", "Voltage": "1.4V", "Format": "DIMM", "Released": "2020" },
+    "Pro Overclocking DDR5": { "Type": "DDR5", "Speed": "6000 MHz", "Voltage": "1.35V", "Format": "DIMM", "Released": "2024" }
+  },
+  "Kingston": {
+    "ValueRAM DDR-266": { "Type": "DDR1", "Speed": "266 MHz", "Voltage": "2.5V", "Format": "DIMM", "Released": "2001" },
+    "HyperX DDR2-1066": { "Type": "DDR2", "Speed": "1066 MHz", "Voltage": "2.0V", "Format": "DIMM", "Released": "2008" },
+    "HyperX Beast DDR3": { "Type": "DDR3", "Speed": "2400 MHz", "Voltage": "1.65V", "Format": "DIMM", "Released": "2013" },
+    "HyperX Predator DDR4": { "Type": "DDR4", "Speed": "3200 MHz", "Voltage": "1.35V", "Format": "DIMM", "Released": "2016" },
+    "Fury Beast DDR5": { "Type": "DDR5", "Speed": "5600 MHz", "Voltage": "1.25V", "Format": "DIMM", "Released": "2022" },
+    "Fury Renegade DDR5 RGB": { "Type": "DDR5", "Speed": "8000 MHz", "Voltage": "1.45V", "Format": "DIMM", "Released": "2024" }
+  },
+  "Corsair": {
+    "XMS DDR-400": { "Type": "DDR1", "Speed": "400 MHz", "Voltage": "2.75V", "Format": "DIMM", "Released": "2003" },
+    "Dominator DDR2-1066": { "Type": "DDR2", "Speed": "1066 MHz", "Voltage": "2.1V", "Format": "DIMM", "Released": "2006" },
+    "Vengeance Pro DDR3": { "Type": "DDR3", "Speed": "1866 MHz", "Voltage": "1.5V", "Format": "DIMM", "Released": "2013" },
+    "Vengeance LPX DDR4": { "Type": "DDR4", "Speed": "3200 MHz", "Voltage": "1.35V", "Format": "DIMM", "Released": "2015" },
+    "Dominator Platinum RGB DDR5": { "Type": "DDR5", "Speed": "6200 MHz", "Voltage": "1.35V", "Format": "DIMM", "Released": "2021" },
+    "Dominator Titanium DDR5": { "Type": "DDR5", "Speed": "7200 MHz", "Voltage": "1.45V", "Format": "DIMM", "Released": "2024" }
+  },
+  "G.Skill": {
+    "Extreme Series DDR-400": { "Type": "DDR1", "Speed": "400 MHz", "Voltage": "2.8V", "Format": "DIMM", "Released": "2005" },
+    "Ripjaws DDR3-1600": { "Type": "DDR3", "Speed": "1600 MHz", "Voltage": "1.5V", "Format": "DIMM", "Released": "2009" },
+    "Ripjaws V DDR4-3600": { "Type": "DDR4", "Speed": "3600 MHz", "Voltage": "1.35V", "Format": "DIMM", "Released": "2015" },
+    "Trident Z RGB DDR4": { "Type": "DDR4", "Speed": "3200 MHz", "Voltage": "1.35V", "Format": "DIMM", "Released": "2017" },
+    "Trident Z5 RGB DDR5": { "Type": "DDR5", "Speed": "6000 MHz", "Voltage": "1.35V", "Format": "DIMM", "Released": "2021" },
+    "Trident Z5 Royal DDR5": { "Type": "DDR5", "Speed": "8400 MHz", "Voltage": "1.45V", "Format": "DIMM", "Released": "2024" },
+    "Trident Z5 Neo RGB (EXPO)": { "Type": "DDR5", "Speed": "6400 MHz", "Voltage": "1.4V", "Format": "DIMM", "Released": "2025" }
+  }
+}

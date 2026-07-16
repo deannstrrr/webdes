@@ -1,0 +1,35 @@
+{
+  "Antec": {
+    "TruePower 430": { "Wattage": "430W", "Efficiency": "70% Std", "Modular": "Non-Modular", "Form_Factor": "ATX", "Released": "2002" },
+    "NeoPower 480": { "Wattage": "480W", "Efficiency": "80% Std", "Modular": "Semi-Modular", "Form_Factor": "ATX", "Released": "2004" },
+    "Signature 850": { "Wattage": "850W", "Efficiency": "80+ Bronze", "Modular": "Semi-Modular", "Form_Factor": "ATX", "Released": "2008" },
+    "HCG-750 Bronze": { "Wattage": "750W", "Efficiency": "80+ Bronze", "Modular": "Semi-Modular", "Form_Factor": "ATX", "Released": "2011" },
+    "Signature 1000 Titanium": { "Wattage": "1000W", "Efficiency": "80+ Titanium", "Modular": "Full", "Form_Factor": "ATX", "Released": "2020" }
+  },
+  "Seasonic": {
+    "Super Tornado 400": { "Wattage": "400W", "Efficiency": "80% Std", "Modular": "Non-Modular", "Form_Factor": "ATX", "Released": "2003" },
+    "M12-700": { "Wattage": "700W", "Efficiency": "80+ Std", "Modular": "Semi-Modular", "Form_Factor": "ATX", "Released": "2006" },
+    "X-750 Golden Gold": { "Wattage": "750W", "Efficiency": "80+ Gold", "Modular": "Full", "Form_Factor": "ATX", "Released": "2009" },
+    "Focus GX-750": { "Wattage": "750W", "Efficiency": "80+ Gold", "Modular": "Full", "Form_Factor": "ATX", "Released": "2019" },
+    "Prime TX-1600": { "Wattage": "1600W", "Efficiency": "80+ Titanium", "Modular": "Full", "Form_Factor": "ATX", "Released": "2022" },
+    "Focus GX-850 (ATX 3.0)": { "Wattage": "850W", "Efficiency": "80+ Gold", "Modular": "Full", "Form_Factor": "ATX", "Released": "2023" },
+    "Prime PX-2200 (ATX 3.1)": { "Wattage": "2200W", "Efficiency": "80+ Platinum", "Modular": "Full", "Form_Factor": "ATX", "Released": "2025" }
+  },
+  "Corsair": {
+    "HX620W": { "Wattage": "620W", "Efficiency": "80+ Std", "Modular": "Semi-Modular", "Form_Factor": "ATX", "Released": "2006" },
+    "TX750W": { "Wattage": "750W", "Efficiency": "80+ Std", "Modular": "Non-Modular", "Form_Factor": "ATX", "Released": "2008" },
+    "AX1200": { "Wattage": "1200W", "Efficiency": "80+ Gold", "Modular": "Full", "Form_Factor": "ATX", "Released": "2010" },
+    "CX430": { "Wattage": "430W", "Efficiency": "80+ Bronze", "Modular": "Non-Modular", "Form_Factor": "ATX", "Released": "2011" },
+    "RM850x": { "Wattage": "850W", "Efficiency": "80+ Gold", "Modular": "Full", "Form_Factor": "ATX", "Released": "2015" },
+    "SF750 Platinum": { "Wattage": "750W", "Efficiency": "80+ Platinum", "Modular": "Full", "Form_Factor": "SFX", "Released": "2018" },
+    "RM1000e (ATX 3.0)": { "Wattage": "1000W", "Efficiency": "80+ Gold", "Modular": "Full", "Form_Factor": "ATX", "Released": "2023" },
+    "SF1000 (ATX 3.1)": { "Wattage": "1000W", "Efficiency": "80+ Platinum", "Modular": "Full", "Form_Factor": "SFX", "Released": "2024" }
+  },
+  "EVGA": {
+    "SuperNOVA 1500 Classified": { "Wattage": "1500W", "Efficiency": "80+ Gold", "Modular": "Full", "Form_Factor": "ATX", "Released": "2012" },
+    "500 W1": { "Wattage": "500W", "Efficiency": "80+ White", "Modular": "Non-Modular", "Form_Factor": "ATX", "Released": "2014" },
+    "SuperNOVA 750 G2": { "Wattage": "750W", "Efficiency": "80+ Gold", "Modular": "Full", "Form_Factor": "ATX", "Released": "2014" },
+    "SuperNOVA 850 G6": { "Wattage": "850W", "Efficiency": "80+ Gold", "Modular": "Full", "Form_Factor": "ATX", "Released": "2021" },
+    "SuperNOVA 1000G XC (ATX 3.0)": { "Wattage": "1000W", "Efficiency": "80+ Gold", "Modular": "Full", "Form_Factor": "ATX", "Released": "2023" }
+  }
+}

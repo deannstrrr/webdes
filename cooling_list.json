@@ -1,0 +1,34 @@
+{
+  "Zalman": {
+    "CNPS6000-Cu": { "Type": "Air Cooler", "Radiator_Size": "N/A", "Fans": "1x 92mm Bracket", "TDP_Rating": "90W", "Released": "2002" },
+    "CNPS9500 LED": { "Type": "Air Cooler", "Radiator_Size": "N/A", "Fans": "1x 92mm", "TDP_Rating": "130W", "Released": "2005" }
+  },
+  "Thermalright": {
+    "Ultra-120 Extreme": { "Type": "Air Cooler", "Radiator_Size": "N/A", "Fans": "Optional 120mm", "TDP_Rating": "180W", "Released": "2007" },
+    "Peerless Assassin 120 SE": { "Type": "Air Cooler", "Radiator_Size": "N/A", "Fans": "2x 120mm", "TDP_Rating": "245W", "Released": "2021" },
+    "Phantom Spirit 120 EVO": { "Type": "Air Cooler", "Radiator_Size": "N/A", "Fans": "2x 120mm", "TDP_Rating": "280W", "Released": "2024" }
+  },
+  "Cooler Master": {
+    "Hyper 212": { "Type": "Air Cooler", "Radiator_Size": "N/A", "Fans": "1x 120mm", "TDP_Rating": "140W", "Released": "2007" },
+    "Hyper 212 Evo": { "Type": "Air Cooler", "Radiator_Size": "N/A", "Fans": "1x 120mm", "TDP_Rating": "150W", "Released": "2011" },
+    "MasterLiquid ML360R RGB": { "Type": "Liquid AIO", "Radiator_Size": "360mm", "Fans": "3x 120mm", "TDP_Rating": "250W", "Released": "2018" },
+    "Hyper 212 Halo RGB": { "Type": "Air Cooler", "Radiator_Size": "N/A", "Fans": "1x 120mm", "TDP_Rating": "160W", "Released": "2023" }
+  },
+  "Noctua": {
+    "NH-U12F": { "Type": "Air Cooler", "Radiator_Size": "N/A", "Fans": "1x 120mm", "TDP_Rating": "140W", "Released": "2006" },
+    "NH-D14": { "Type": "Air Cooler", "Radiator_Size": "N/A", "Fans": "1x 140mm + 1x 120mm", "TDP_Rating": "180W", "Released": "2009" },
+    "NH-D15": { "Type": "Air Cooler", "Radiator_Size": "N/A", "Fans": "2x 140mm", "TDP_Rating": "220W", "Released": "2014" },
+    "NH-U12A": { "Type": "Air Cooler", "Radiator_Size": "N/A", "Fans": "2x 120mm", "TDP_Rating": "200W", "Released": "2019" },
+    "NH-D15 G2": { "Type": "Air Cooler", "Radiator_Size": "N/A", "Fans": "2x 140mm G2", "TDP_Rating": "275W", "Released": "2024" }
+  },
+  "Corsair": {
+    "H50": { "Type": "Liquid AIO", "Radiator_Size": "120mm", "Fans": "1x 120mm", "TDP_Rating": "130W", "Released": "2009" },
+    "H100i": { "Type": "Liquid AIO", "Radiator_Size": "240mm", "Fans": "2x 120mm", "TDP_Rating": "220W", "Released": "2012" },
+    "iCUE H150i Elite Capellix": { "Type": "Liquid AIO", "Radiator_Size": "360mm", "Fans": "3x 120mm", "TDP_Rating": "300W", "Released": "2020" },
+    "iCUE LINK Titan 360 RX": { "Type": "Liquid AIO", "Radiator_Size": "360mm", "Fans": "3x 120mm RX", "TDP_Rating": "340W", "Released": "2024" }
+  },
+  "Arctic": {
+    "Liquid Freezer II 280": { "Type": "Liquid AIO", "Radiator_Size": "280mm", "Fans": "2x 140mm", "TDP_Rating": "280W", "Released": "2019" },
+    "Liquid Freezer III 360": { "Type": "Liquid AIO", "Radiator_Size": "360mm", "Fans": "3x 120mm", "TDP_Rating": "320W", "Released": "2024" }
+  }
+}

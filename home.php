@@ -14,27 +14,20 @@ $user_data = mysqli_fetch_assoc($result);
 
 $avatar = !empty($user_data['avatar_path']) ? $user_data['avatar_path'] : '';
 
-$cpus = [];
-$json_file = "cpu_list.json";
+$spotlight = [
+    'tag' => 'HARDWARE RELEASES',
+    'title' => 'Next-Generation Architectures Released',
+    'description' => 'Explore full architectural breakdowns, historical pricing transitions, and clock efficiency charts dating back to 2000 in our updated hardware catalogue panels.',
+    'image_url' => '',
+    'redirect_url' => '#'
+];
 
-if (file_exists($json_file)) {
-    $json_data = file_get_contents($json_file);
-    $raw_array = json_decode($json_data, true);
-    if (is_array($raw_array)) {
-        foreach ($raw_array as $brand => $models) {
-            if (is_array($models)) {
-                foreach ($models as $name => $specs) {
-                    $cpus[] = [
-                        'name' => $name,
-                        'brand' => $brand,
-                        'socket' => $specs['Socket'] ?? 'N/A',
-                        'cores' => $specs['Cores'] ?? 'N/A',
-                        'threads' => $specs['Threads'] ?? 'N/A',
-                        'clock' => $specs['Frequency'] ?? 'N/A'
-                    ];
-                }
-            }
-        }
+$spotlight_file = "spotlight.json";
+if (file_exists($spotlight_file)) {
+    $spotlight_data = file_get_contents($spotlight_file);
+    $decoded_spotlight = json_decode($spotlight_data, true);
+    if (is_array($decoded_spotlight)) {
+        $spotlight = array_merge($spotlight, $decoded_spotlight);
     }
 }
 ?>
@@ -125,34 +118,109 @@ if (file_exists($json_file)) {
         </div>
     </header>
 
-    <div class="fb-wrapper" style="margin-top: 20px; padding: 0 20px;">
-        <div class="fb-card" style="margin-bottom: 20px;">
-            <h2>Welcome to your Dashboard</h2>
-            <p style="color: #65676b; margin-top: 5px;">Browse modern processor component details directly from your homepage feed.</p>
+    <div class="dashboard-landing-container">
+        <div class="landing-welcome-row">
+            <h2>Welcome to Gearbox!</h2>
         </div>
 
-        <div class="hardware-grid-layout">
-            <?php 
-            if (!empty($cpus)) {
-                foreach (array_slice($cpus, 0, 48) as $cpu) { 
-            ?>
-                <div class="fb-card">
-                    <h3><?php echo htmlspecialchars($cpu['name']); ?></h3>
-                    <div class="specs-wrapper">
-                        <div class="specs-row"><strong>Brand:</strong> <?php echo htmlspecialchars($cpu['brand']); ?></div>
-                        <div class="specs-row"><strong>Socket:</strong> <?php echo htmlspecialchars($cpu['socket']); ?></div>
-                        <div class="specs-row"><strong>Cores / Threads:</strong> <?php echo htmlspecialchars($cpu['cores']); ?> / <?php echo htmlspecialchars($cpu['threads']); ?></div>
-                        <div class="specs-row"><strong>Clock Speed:</strong> <?php echo htmlspecialchars($cpu['clock']); ?></div>
-                    </div>
+        <div class="landing-content-layout">
+            <a href="<?php echo htmlspecialchars($spotlight['redirect_url']); ?>" class="landing-hero-card" <?php echo ($spotlight['redirect_url'] !== '#') ? 'target="_blank"' : ''; ?> style="text-decoration: none;">
+                <div class="hero-image-placeholder" style="<?php echo !empty($spotlight['image_url']) ? "background-image: url('" . htmlspecialchars($spotlight['image_url']) . "'); background-size: cover; background-position: center;" : ""; ?>">
+                    <?php if (empty($spotlight['image_url'])) { ?>
+                        <i class="fa-solid fa-microchip"></i>
+                    <?php } ?>
                 </div>
-            <?php 
+                <div class="hero-text-content">
+                    <span class="content-tag"><i class="fa-solid fa-bolt"></i> <?php echo htmlspecialchars($spotlight['tag']); ?></span>
+                    <h3><?php echo htmlspecialchars($spotlight['title']); ?></h3>
+                    <p><?php echo htmlspecialchars($spotlight['description']); ?></p>
+                </div>
+            </a>
+
+            <div class="landing-sidebar-list">
+                <?php
+                $sidebar_news = [
+                    [
+                        'title' => 'iPhone 17 Pro Max Design Architecture Unveiled',
+                        'tag' => 'MOBILE RELEASE',
+                        'image_url' => 'https://images.unsplash.com/photo-1616348436168-de43ad0db179?q=80&w=300&auto=format&fit=crop',
+                        'link' => 'hardware.php?type=phone&brand=Apple'
+                    ],
+                    [
+                        'title' => 'Samsung Teases Galaxy Z Fold 8 Foldable Displays',
+                        'tag' => 'MOBILE UPDATES',
+                        'image_url' => 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?q=80&w=300&auto=format&fit=crop',
+                        'link' => 'hardware.php?type=phone&brand=Samsung'
+                    ],
+                    [
+                        'title' => 'AMD Launches Ryzen 7 7700X3D Processor Globally',
+                        'tag' => 'COMPUTER CPU',
+                        'image_url' => 'https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=300&auto=format&fit=crop',
+                        'link' => 'hardware.php?type=cpu'
+                    ],
+                    [
+                        'title' => 'NVIDIA Prepares GeForce RTX 5060 Ti Transition',
+                        'tag' => 'COMPUTER GPU',
+                        'image_url' => 'https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=300&auto=format&fit=crop',
+                        'link' => 'hardware.php?type=gpu'
+                    ]
+                ];
+
+                $sidebar_file = "sidebar_news.json";
+                if (file_exists($sidebar_file)) {
+                    $json_data = file_get_contents($sidebar_file);
+                    $decoded_data = json_decode($json_data, true);
+                    if (is_array($decoded_data)) {
+                        $sidebar_news = $decoded_data;
+                    }
                 }
-            } else { 
-            ?>
-                <div class="fb-card" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
-                    <p style="color: #65676b;">Unable to load hardware database. Make sure cpu_list.json is present in your web directory.</p>
-                </div>
-            <?php } ?>
+
+                foreach ($sidebar_news as $news) {
+                ?>
+                    <a href="<?php echo htmlspecialchars($news['link']); ?>" class="sidebar-news-item" style="text-decoration: none;">
+                        <div class="sidebar-item-text">
+                            <h4><?php echo htmlspecialchars($news['title']); ?></h4>
+                            <span class="content-tag"><?php echo htmlspecialchars($news['tag']); ?></span>
+                        </div>
+                        <div class="sidebar-image-thumbnail">
+                            <img src="<?php echo htmlspecialchars($news['image_url']); ?>" alt="Hardware Preview">
+                        </div>
+                    </a>
+                <?php } ?>
+            </div>
+        </div>
+    </div>
+
+    <div class="brands-carousel-section">
+        <div class="brands-section-header">
+            <h2>Phones</h2>
+        </div>
+        
+        <div class="carousel-viewport" id="brand-carousel-viewport">
+            <div class="carousel-track" id="brand-carousel-track">
+                <?php
+                $brands = [
+                    ['name' => 'Apple', 'img' => 'https://images.unsplash.com/photo-1616348436168-de43ad0db179?q=80&w=400&auto=format&fit=crop', 'link' => 'hardware.php?type=phone&brand=Apple'],
+                    ['name' => 'Samsung', 'img' => 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?q=80&w=400&auto=format&fit=crop', 'link' => 'hardware.php?type=phone&brand=Samsung'],
+                    ['name' => 'Xiaomi', 'img' => 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?q=80&w=400&auto=format&fit=crop', 'link' => 'hardware.php?type=phone&brand=Xiaomi'],
+                    ['name' => 'OPPO', 'img' => 'https://images.unsplash.com/photo-1580910051074-3eb694886505?q=80&w=400&auto=format&fit=crop', 'link' => 'hardware.php?type=phone&brand=OPPO'],
+                    ['name' => 'VIVO', 'img' => 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=400&auto=format&fit=crop', 'link' => 'hardware.php?type=phone&brand=VIVO'],
+                    ['name' => 'Infinix', 'img' => 'https://images.unsplash.com/photo-1565849906186-07a9b2d75544?q=80&w=400&auto=format&fit=crop', 'link' => 'hardware.php?type=phone&brand=Infinix'],
+                    ['name' => 'Huawei', 'img' => 'https://images.unsplash.com/photo-1546054454-aa26e2b734c7?q=80&w=400&auto=format&fit=crop', 'link' => 'hardware.php?type=phone&brand=Huawei']
+                ];
+
+                foreach ($brands as $brand) {
+                ?>
+                    <div class="carousel-card-wrapper" onclick="handleCardClick(event, '<?php echo $brand['link']; ?>')">
+                        <div class="carousel-card-skew">
+                            <div class="carousel-card-img" style="background-image: url('<?php echo $brand['img']; ?>');"></div>
+                            <div class="carousel-card-overlay">
+                                <h3><?php echo htmlspecialchars($brand['name']); ?></h3>
+                            </div>
+                        </div>
+                    </div>
+                <?php } ?>
+            </div>
         </div>
     </div>
 
@@ -294,6 +362,71 @@ if (file_exists($json_file)) {
                 resultsBox.style.display = 'none';
             }
         });
+
+        var viewport = document.getElementById('brand-carousel-viewport');
+        var track = document.getElementById('brand-carousel-track');
+        
+        var isDown = false;
+        var startX;
+        var scrollLeft;
+        var walkMultiplier = 1.35;
+        var hasDragged = false;
+
+        viewport.addEventListener('mousedown', function(e) {
+            isDown = true;
+            startX = e.pageX - viewport.offsetLeft;
+            scrollLeft = viewport.scrollLeft;
+            hasDragged = false;
+        });
+
+        viewport.addEventListener('mouseleave', function() {
+            isDown = false;
+        });
+
+        viewport.addEventListener('mouseup', function() {
+            isDown = false;
+        });
+
+        viewport.addEventListener('mousemove', function(e) {
+            if(!isDown) return;
+            e.preventDefault();
+            var x = e.pageX - viewport.offsetLeft;
+            var walk = (x - startX) * walkMultiplier;
+            viewport.scrollLeft = scrollLeft - walk;
+            if (Math.abs(walk) > 5) {
+                hasDragged = true;
+            }
+        });
+
+        viewport.addEventListener('touchstart', function(e) {
+            isDown = true;
+            startX = e.touches[0].pageX - viewport.offsetLeft;
+            scrollLeft = viewport.scrollLeft;
+            hasDragged = false;
+        }, { passive: true });
+
+        viewport.addEventListener('touchend', function() {
+            isDown = false;
+        });
+
+        viewport.addEventListener('touchmove', function(e) {
+            if(!isDown) return;
+            var x = e.touches[0].pageX - viewport.offsetLeft;
+            var walk = (x - startX) * walkMultiplier;
+            viewport.scrollLeft = scrollLeft - walk;
+            if (Math.abs(walk) > 5) {
+                hasDragged = true;
+            }
+        }, { passive: true });
+
+        function handleCardClick(event, redirectUrl) {
+            if (hasDragged) {
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+            window.location.href = redirectUrl;
+        }
     </script>
 </body>
 </html>

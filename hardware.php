@@ -243,25 +243,85 @@ if (file_exists($json_file)) {
     </header>
 
     <div class="fb-wrapper" style="margin-top: 20px; padding: 0 20px;">
-        <div class="fb-card" style="margin-bottom: 20px;">
-            <h2>Hardware Database - <?php echo $title_text; ?></h2>
-            <p style="color: #65676b; margin-top: 5px;">Tracking historical specifications ranging from the year 2000 up until the present day.</p>
-        </div>
 
         <div class="hardware-grid-layout">
             <?php 
             if (!empty($components)) {
+                $ratings_db_file = "ratings_data.json";
+                $global_ratings_log = [];
+                if (file_exists($ratings_db_file)) {
+                    $global_ratings_log = json_decode(file_get_contents($ratings_db_file), true);
+                    if (!is_array($global_ratings_log)) {
+                        $global_ratings_log = [];
+                    }
+                }
+
                 foreach ($components as $item) { 
+                    $item_name_lower = strtolower($item['name']);
+                    $item_brand_lower = strtolower($item['brand']);
+                    
+                    if (strpos($item_brand_lower, 'nvidia') !== false) {
+                        $item_image = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ1yklrt0pnQwBy1uoTESGu-LBVe0UMta49IpBIzgJC8Q&s=10';
+                    } elseif (strpos($item_brand_lower, 'amd') !== false) {
+                        $item_image = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRdfiGsu0n57aCfo_vtrt18sv3u0AXcYjNsvTRsjDzgoA&s=10';
+                    } elseif (strpos($item_brand_lower, 'intel') !== false) {
+                        $item_image = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSVolPd4C7eaay_wIfWXv5jMz7wLz-NapXrK9AI_TVS6A&s=10';
+                    } elseif (strpos($item_brand_lower, 'asus') !== false) {
+                        $item_image = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRcpq825sKrHizNW2yJKWFzXP6-alz-giYZDt_fmKiQUg&s';
+                    } elseif (strpos($item_brand_lower, 'gigabyte') !== false) {
+                        $item_image = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTovRkVmEtogRMblZ1aHX06TRCqsZY1eTuAVqe5LqaGk6S4zvmaunw1xE-8&s=10';
+                    } elseif (strpos($item_brand_lower, 'corsair') !== false) {
+                        $item_image = 'https://cwsmgmt.corsair.com/press/CORSAIRLogo2020_stack_K.png';
+                    } elseif (strpos($item_brand_lower, 'kingston') !== false) {
+                        $item_image = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRKrA9Ik8OR5PfnXl4OjMj4fLd_yqnzkDhlHBR-JBXZk8Am4AmsAHByqVI&s=10';
+                    } elseif (strpos($item_brand_lower, 'crucial') !== false) {
+                        $item_image = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSh7VbNDP5a0qv1CxBBUfYy1gTEj3OrInQh2pJhQL3GwA&s=10';
+                    } elseif (strpos($item_brand_lower, 'msi') !== false) {
+                        $item_image = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTjNNAVQcIOjIWGDcnVJp6340ab-kAzQnR-4BY6m5R81Q&s=10';
+                    } elseif (strpos($item_brand_lower, 'apple') !== false) {
+                        $item_image = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQdmKeCJ16mi6F3nhrPQeyXoZERh4r6zeNusXO5GbimgXHcDAwRsPD5TdPT&s=10';
+                    } elseif (strpos($item_brand_lower, 'samsung') !== false) {
+                        $item_image = 'https://images.samsung.com/is/image/samsung/assets/global/about-us/brand/logo/256_144_2.png?$512_N_PNG$';
+                    } elseif (strpos($item_brand_lower, 'xiaomi') !== false) {
+                        $item_image = 'https://upload.wikimedia.org/wikipedia/commons/a/ae/Xiaomi_logo_%282021-%29.svg';
+                    } else {
+                        $item_image = 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=300&auto=format&fit=crop';
+                    }
+
+                    $loop_item_id = md5($item['brand'] . '_' . $item['name']);
+                    $card_total_reviews = 0;
+                    $card_average_score = 0.0;
+
+                    if (isset($global_ratings_log[$loop_item_id]) && is_array($global_ratings_log[$loop_item_id])) {
+                        $card_total_reviews = count($global_ratings_log[$loop_item_id]);
+                        if ($card_total_reviews > 0) {
+                            $card_average_score = round(array_sum($global_ratings_log[$loop_item_id]) / $card_total_reviews, 1);
+                        }
+                    }
+
+                    $detail_url = 'item_details.php?type=' . urlencode($type) . '&brand=' . urlencode($item['brand']) . '&name=' . urlencode($item['name']);
             ?>
-                <div class="fb-card">
-                    <h3><?php echo htmlspecialchars($item['name']); ?></h3>
-                    <div class="specs-wrapper">
-                        <div class="specs-row"><strong>Brand:</strong> <?php echo htmlspecialchars($item['brand']); ?></div>
-                        <?php foreach ($item['details'] as $key => $val) { ?>
-                            <div class="specs-row"><strong><?php echo $key; ?>:</strong> <?php echo htmlspecialchars($val); ?></div>
+                <a href="<?php echo $detail_url; ?>" class="fb-card catalog-card" style="text-decoration: none;">
+                    <div class="catalog-card-image-container">
+                        <img src="<?php echo htmlspecialchars($item_image); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>">
+                    </div>
+                    <div class="catalog-card-content" style="position: relative;">
+                        <h3><?php echo htmlspecialchars($item['name']); ?></h3>
+                        <div class="specs-wrapper">
+                            <div class="specs-row"><strong>Brand:</strong> <?php echo htmlspecialchars($item['brand']); ?></div>
+                            <?php foreach ($item['details'] as $key => $val) { ?>
+                                <div class="specs-row"><strong><?php echo $key; ?>:</strong> <?php echo htmlspecialchars($val); ?></div>
+                            <?php } ?>
+                        </div>
+                        
+                        <?php if ($card_total_reviews > 0) { ?>
+                            <div class="catalog-card-rating-badge">
+                                <i class="fa-solid fa-star"></i>
+                                <span><?php echo $card_average_score; ?> (<?php echo $card_total_reviews; ?>)</span>
+                            </div>
                         <?php } ?>
                     </div>
-                </div>
+                </a>
             <?php 
                 }
             } else { 

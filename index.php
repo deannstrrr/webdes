@@ -9,6 +9,7 @@
 </head>
 <body>
 
+    <body class="login-page-body">
     <div class="login-card">
         <button class="close-btn">&times;</button>
         

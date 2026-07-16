@@ -1,0 +1,26 @@
+[
+    {
+        "title": "iPhone 17 Pro Max Design Architecture Unveiled",
+        "tag": "MOBILE RELEASE",
+        "image_url": "https://images.unsplash.com/photo-1616348436168-de43ad0db179?q=80&w=300&auto=format&fit=crop",
+        "link": "https://www.apple.com/ph/iphone-17-pro/"
+    },
+    {
+        "title": "Samsung Teases Galaxy Z Fold 8 Foldable Displays",
+        "tag": "MOBILE UPDATES",
+        "image_url": "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?q=80&w=300&auto=format&fit=crop",
+        "link": "https://www.youtube.com/shorts/uCxgCB5ilxg"
+    },
+    {
+        "title": "AMD Launches Ryzen 7 7700X3D Processor Globally",
+        "tag": "COMPUTER CPU",
+        "image_url": "https://cdn.mos.cms.futurecdn.net/v2/t:0,l:428,cw:1142,ch:857,q:80,w:1142/Xd378i3ZkEmbM7A7Tzt59S.jpg",
+        "link": "https://www.amd.com/en/products/processors/handhelds/ryzen-z-series.html#tabs-67e53c5855-item-b88e2a84f3-tab"
+    },
+    {
+        "title": "NVIDIA Prepares GeForce RTX 5060 Ti Transition",
+        "tag": "COMPUTER GPU",
+        "image_url": "https://cdn.wccftech.com/wp-content/uploads/2025/02/NVIDIA-GeForce-RTX-5060-Ti.jpg",
+        "link": "https://www.nvidia.com/en-me/geforce/graphics-cards/50-series/rtx-5060-family/"
+    }
+]

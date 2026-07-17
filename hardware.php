@@ -17,141 +17,114 @@ $logged_in_avatar = !empty($logged_in_data['avatar_path']) ? $logged_in_data['av
 $type = isset($_GET['type']) ? $_GET['type'] : 'cpu';
 $selected_brand = isset($_GET['brand']) ? $_GET['brand'] : '';
 
-$json_file = "cpu_list.json";
 $title_text = "CPUs Database";
-
 if ($type === 'gpu') {
-    $json_file = "gpu_list.json";
     $title_text = "GPUs Database";
 } elseif ($type === 'motherboard') {
-    $json_file = "motherboard_list.json";
     $title_text = "Motherboards Database";
 } elseif ($type === 'ram') {
-    $json_file = "ram_list.json";
     $title_text = "RAM Database";
 } elseif ($type === 'fan') {
-    $json_file = "fan_list.json";
     $title_text = "Fans Database";
 } elseif ($type === 'psu') {
-    $json_file = "psu_list.json";
     $title_text = "PSUs Database";
 } elseif ($type === 'cooling') {
-    $json_file = "cooling_list.json";
     $title_text = "CPU Coolings Database";
 } elseif ($type === 'phone') {
-    $json_file = "phone_list.json";
     $title_text = !empty($selected_brand) ? "$selected_brand Phones Database" : "Phones Database";
 }
 
-$components = [];
+$table_map = [
+    'cpu' => 'cpus',
+    'gpu' => 'gpus',
+    'motherboard' => 'motherboards',
+    'ram' => 'ram',
+    'fan' => 'fans',
+    'psu' => 'psus',
+    'cooling' => 'cooling',
+    'phone' => 'phones'
+];
 
-if (file_exists($json_file)) {
-    $json_data = file_get_contents($json_file);
-    $raw_array = json_decode($json_data, true);
-    if (is_array($raw_array)) {
-        foreach ($raw_array as $brand => $models) {
-            if (!empty($selected_brand) && strtolower($brand) !== strtolower($selected_brand)) {
-                continue;
-            }
-            if (is_array($models)) {
-                foreach ($models as $name => $specs) {
-                    if ($type === 'cpu') {
-                        $components[] = [
-                            'name' => $name,
-                            'brand' => $brand,
-                            'details' => [
-                                'Socket' => $specs['Socket'] ?? 'N/A',
-                                'Cores / Threads' => ($specs['Cores'] ?? 'N/A') . ' / ' . ($specs['Threads'] ?? 'N/A'),
-                                'Clock Speed' => $specs['Frequency'] ?? 'N/A'
-                            ]
-                        ];
-                    } elseif ($type === 'gpu') {
-                        $components[] = [
-                            'name' => $name,
-                            'brand' => $brand,
-                            'details' => [
-                                'Interface' => $specs['Interface'] ?? 'N/A',
-                                'VRAM' => $specs['VRAM'] ?? 'N/A',
-                                'TDP' => $specs['TDP'] ?? 'N/A',
-                                'Released' => $specs['Released'] ?? 'N/A'
-                            ]
-                        ];
-                    } elseif ($type === 'motherboard') {
-                        $components[] = [
-                            'name' => $name,
-                            'brand' => $brand,
-                            'details' => [
-                                'Socket' => $specs['Socket'] ?? 'N/A',
-                                'Chipset' => $specs['Chipset'] ?? 'N/A',
-                                'Form Factor' => $specs['Form_Factor'] ?? 'N/A',
-                                'RAM Slots' => $specs['RAM_Slots'] ?? 'N/A',
-                                'Released' => $specs['Released'] ?? 'N/A'
-                            ]
-                        ];
-                    } elseif ($type === 'ram') {
-                        $components[] = [
-                            'name' => $name,
-                            'brand' => $brand,
-                            'details' => [
-                                'Type' => $specs['Type'] ?? 'N/A',
-                                'Speed' => $specs['Speed'] ?? 'N/A',
-                                'Voltage' => $specs['Voltage'] ?? 'N/A',
-                                'Format' => $specs['Format'] ?? 'N/A',
-                                'Released' => $specs['Released'] ?? 'N/A'
-                            ]
-                        ];
-                    } elseif ($type === 'fan') {
-                        $components[] = [
-                            'name' => $name,
-                            'brand' => $brand,
-                            'details' => [
-                                'Size' => $specs['Size'] ?? 'N/A',
-                                'Speed' => $specs['Speed'] ?? 'N/A',
-                                'Airflow' => $specs['Airflow'] ?? 'N/A',
-                                'Noise' => $specs['Noise'] ?? 'N/A',
-                                'Released' => $specs['Released'] ?? 'N/A'
-                            ]
-                        ];
-                    } elseif ($type === 'psu') {
-                        $components[] = [
-                            'name' => $name,
-                            'brand' => $brand,
-                            'details' => [
-                                'Wattage' => $specs['Wattage'] ?? 'N/A',
-                                'Efficiency' => $specs['Efficiency'] ?? 'N/A',
-                                'Modular' => $specs['Modular'] ?? 'N/A',
-                                'Form Factor' => $specs['Form_Factor'] ?? 'N/A',
-                                'Released' => $specs['Released'] ?? 'N/A'
-                            ]
-                        ];
-                    } elseif ($type === 'cooling') {
-                        $components[] = [
-                            'name' => $name,
-                            'brand' => $brand,
-                            'details' => [
-                                'Type' => $specs['Type'] ?? 'N/A',
-                                'Radiator Size' => $specs['Radiator_Size'] ?? 'N/A',
-                                'Fans' => $specs['Fans'] ?? 'N/A',
-                                'TDP Rating' => $specs['TDP_Rating'] ?? 'N/A',
-                                'Released' => $specs['Released'] ?? 'N/A'
-                            ]
-                        ];
-                    } elseif ($type === 'phone') {
-                        $components[] = [
-                            'name' => $name,
-                            'brand' => $brand,
-                            'details' => [
-                                'Chipset' => $specs['Chipset'] ?? $specs['Chip'] ?? 'N/A',
-                                'Screen' => $specs['Screen'] ?? 'N/A',
-                                'Camera' => $specs['Camera'] ?? 'N/A',
-                                'Battery' => $specs['Battery'] ?? 'N/A',
-                                'Released' => $specs['Released'] ?? 'N/A'
-                            ]
-                        ];
-                    }
-                }
-            }
+$table = $table_map[$type] ?? 'cpus';
+$query = "SELECT * FROM `$table`";
+if (!empty($selected_brand)) {
+    $brand_esc = mysqli_real_escape_string($conn, $selected_brand);
+    $query .= " WHERE LOWER(brand) = LOWER('$brand_esc')";
+}
+$db_result = mysqli_query($conn, $query);
+
+$components = [];
+if ($db_result) {
+    while ($row = mysqli_fetch_assoc($db_result)) {
+        $details = [];
+        if ($type === 'cpu') {
+            $details = [
+                'Socket' => $row['socket'] ?? 'N/A',
+                'Cores / Threads' => $row['cores_threads'] ?? 'N/A',
+                'Clock Speed' => $row['clock_speed'] ?? 'N/A'
+            ];
+        } elseif ($type === 'gpu') {
+            $details = [
+                'Interface' => $row['interface'] ?? 'N/A',
+                'VRAM' => $row['vram'] ?? 'N/A',
+                'TDP' => $row['tdp'] ?? 'N/A',
+                'Released' => $row['released'] ?? 'N/A'
+            ];
+        } elseif ($type === 'motherboard') {
+            $details = [
+                'Socket' => $row['socket'] ?? 'N/A',
+                'Chipset' => $row['chipset'] ?? 'N/A',
+                'Form Factor' => $row['form_factor'] ?? 'N/A',
+                'RAM Slots' => $row['ram_slots'] ?? 'N/A',
+                'Released' => $row['released'] ?? 'N/A'
+            ];
+        } elseif ($type === 'ram') {
+            $details = [
+                'Type' => $row['type'] ?? 'N/A',
+                'Speed' => $row['speed'] ?? 'N/A',
+                'Voltage' => $row['voltage'] ?? 'N/A',
+                'Format' => $row['format'] ?? 'N/A',
+                'Released' => $row['released'] ?? 'N/A'
+            ];
+        } elseif ($type === 'fan') {
+            $details = [
+                'Size' => $row['size'] ?? 'N/A',
+                'Speed' => $row['speed'] ?? 'N/A',
+                'Airflow' => $row['airflow'] ?? 'N/A',
+                'Noise' => $row['noise'] ?? 'N/A',
+                'Released' => $row['released'] ?? 'N/A'
+            ];
+        } elseif ($type === 'psu') {
+            $details = [
+                'Wattage' => $row['wattage'] ?? 'N/A',
+                'Efficiency' => $row['efficiency'] ?? 'N/A',
+                'Modular' => $row['modular'] ?? 'N/A',
+                'Form Factor' => $row['form_factor'] ?? 'N/A',
+                'Released' => $row['released'] ?? 'N/A'
+            ];
+        } elseif ($type === 'cooling') {
+            $details = [
+                'Type' => $row['type'] ?? 'N/A',
+                'Radiator Size' => $row['radiator_size'] ?? 'N/A',
+                'Fans' => $row['fans'] ?? 'N/A',
+                'TDP Rating' => $row['tdp_rating'] ?? 'N/A',
+                'Released' => $row['released'] ?? 'N/A'
+            ];
+        } elseif ($type === 'phone') {
+            $details = [
+                'Chipset' => $row['chipset'] ?? 'N/A',
+                'Screen' => $row['screen'] ?? 'N/A',
+                'Camera' => $row['camera'] ?? 'N/A',
+                'Battery' => $row['battery'] ?? 'N/A',
+                'Released' => $row['released'] ?? 'N/A'
+            ];
         }
+
+        $components[] = [
+            'name' => $row['name'],
+            'brand' => $row['brand'],
+            'details' => $details
+        ];
     }
 }
 ?>
@@ -161,7 +134,8 @@ if (file_exists($json_file)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GEARBOX - Hardware Database</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="global.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="hardware.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -220,6 +194,44 @@ if (file_exists($json_file)) {
                 <div class="search-results-dropdown" id="search-results-box"></div>
             </div>
 
+            <?php
+            $history_list = [];
+            if (isset($_SESSION['username'])) {
+                $current_user_escaped = mysqli_real_escape_string($conn, trim($_SESSION['username']));
+                $user_id_query = "SELECT id FROM users WHERE username = '$current_user_escaped'";
+                $user_id_result = mysqli_query($conn, $user_id_query);
+                $user_id_data = mysqli_fetch_assoc($user_id_result);
+                $current_user_id = isset($user_id_data['id']) ? intval($user_id_data['id']) : 0;
+
+                if ($current_user_id > 0) {
+                    $history_sql = "SELECT DISTINCT u.username, u.avatar_path 
+                                    FROM messages m
+                                    JOIN users u ON (m.sender_id = u.id OR m.receiver_id = u.id)
+                                    WHERE (m.sender_id = '$current_user_id' OR m.receiver_id = '$current_user_id')
+                                      AND u.id != '$current_user_id'
+                                    LIMIT 10";
+                    $history_result = mysqli_query($conn, $history_sql);
+                    if ($history_result) {
+                        while ($history_row = mysqli_fetch_assoc($history_result)) {
+                            $history_list[] = $history_row;
+                        }
+                    }
+                }
+            }
+            ?>
+
+            <div class="header-chat-history-wrapper">
+                <div class="header-chat-bubble-trigger" onclick="toggleChatHistoryDropdown(event)">
+                    <i class="fa-regular fa-paper-plane"></i>
+                </div>
+                <div class="chat-history-dropdown-menu" id="chat-history-dropdown">
+                    <div class="chat-history-header">Chats</div>
+                    <div class="chat-history-body" id="chat-dropdown-list-container">
+                        <div class="chat-history-empty">Loading conversations...</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="header-user-profile-wrapper">
                 <div class="header-user-profile" onclick="toggleProfileDropdown(event)">
                     <div class="avatar-placeholder <?php echo !empty($logged_in_avatar) ? 'has-image' : ''; ?>" id="header-avatar-container">
@@ -240,6 +252,44 @@ if (file_exists($json_file)) {
                 </div>
             </div>
         </div>
+
+        <div class="gearbox-chat-popup" id="gearbox-chat-box" style="display: none;">
+            <div class="chat-header">
+                <div class="chat-header-user">
+                    <div class="chat-header-avatar"></div>
+                    <span class="chat-title-name">Chat</span>
+                </div>
+                <button class="chat-close-btn" onclick="closeGlobalChatBox()">&times;</button>
+            </div>
+            <div class="chat-messages-area" id="chat-messages-container"></div>
+            <div class="chat-emoji-picker-panel" id="chat-emoji-panel" style="display: none;">
+                <span onclick="appendGlobalEmoji('😀')">😀</span>
+                <span onclick="appendGlobalEmoji('😁')">😁</span>
+                <span onclick="appendGlobalEmoji('😂')">😂</span>
+                <span onclick="appendGlobalEmoji('😃')">😃</span>
+                <span onclick="appendGlobalEmoji('😄')">😄</span>
+                <span onclick="appendGlobalEmoji('😅')">😅</span>
+                <span onclick="appendGlobalEmoji('😆')">😆</span>
+                <span onclick="appendGlobalEmoji('😉')">😉</span>
+                <span onclick="appendGlobalEmoji('😊')">😊</span>
+                <span onclick="appendGlobalEmoji('😍')">😍</span>
+                <span onclick="appendGlobalEmoji('👍')">👍</span>
+                <span onclick="appendGlobalEmoji('❤️')">❤️</span>
+            </div>
+            <div class="chat-footer-input">
+                <div class="chat-input-wrapper">
+                    <input type="text" id="chat-message-input" placeholder="Type a message..." onkeydown="checkGlobalChatKey(event)">
+                    <button class="chat-emoji-trigger-btn" onclick="toggleGlobalEmojiPanel()">
+                        <i class="fa-regular fa-face-smile"></i>
+                    </button>
+                </div>
+                <button class="chat-send-btn" onclick="sendGlobalMessage()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L2 8.66l7.33 2.89L17 5l-6.55 7.67L13.33 22 22 2z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
     </header>
 
     <div class="fb-wrapper" style="margin-top: 20px; padding: 0 20px;">
@@ -247,15 +297,6 @@ if (file_exists($json_file)) {
         <div class="hardware-grid-layout">
             <?php 
             if (!empty($components)) {
-                $ratings_db_file = "ratings_data.json";
-                $global_ratings_log = [];
-                if (file_exists($ratings_db_file)) {
-                    $global_ratings_log = json_decode(file_get_contents($ratings_db_file), true);
-                    if (!is_array($global_ratings_log)) {
-                        $global_ratings_log = [];
-                    }
-                }
-
                 foreach ($components as $item) { 
                     $item_name_lower = strtolower($item['name']);
                     $item_brand_lower = strtolower($item['brand']);
@@ -292,11 +333,12 @@ if (file_exists($json_file)) {
                     $card_total_reviews = 0;
                     $card_average_score = 0.0;
 
-                    if (isset($global_ratings_log[$loop_item_id]) && is_array($global_ratings_log[$loop_item_id])) {
-                        $card_total_reviews = count($global_ratings_log[$loop_item_id]);
-                        if ($card_total_reviews > 0) {
-                            $card_average_score = round(array_sum($global_ratings_log[$loop_item_id]) / $card_total_reviews, 1);
-                        }
+                    $rating_q = mysqli_query($conn, "SELECT score FROM ratings WHERE item_id = '$loop_item_id'");
+                    if ($rating_q && mysqli_num_rows($rating_q) > 0) {
+                        $card_total_reviews = mysqli_num_rows($rating_q);
+                        $sum = 0;
+                        while($r = mysqli_fetch_assoc($rating_q)) { $sum += $r['score']; }
+                        $card_average_score = round($sum / $card_total_reviews, 1);
                     }
 
                     $detail_url = 'item_details.php?type=' . urlencode($type) . '&brand=' . urlencode($item['brand']) . '&name=' . urlencode($item['name']);
@@ -327,16 +369,181 @@ if (file_exists($json_file)) {
             } else { 
             ?>
                 <div class="fb-card" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
-                    <p style="color: #65676b;">No results found. Make sure your local JSON database files are present.</p>
+                    <p style="color: #65676b;">No results found inside the components database structure.</p>
                 </div>
             <?php } ?>
         </div>
     </div>
 
     <script>
+        var chatPollingInterval;
+        var activeChatUser = '';
+
+        function openFloatingChatFromDropdown(username, avatarUrl) {
+            var chatBox = document.getElementById('gearbox-chat-box');
+            if (!chatBox) return;
+            activeChatUser = username;
+            var nameLabel = chatBox.querySelector('.chat-title-name');
+            if (nameLabel) nameLabel.innerText = username;
+            var avatarImgContainer = chatBox.querySelector('.chat-header-avatar');
+            if (avatarImgContainer) {
+                if (avatarUrl && avatarUrl !== '') {
+                    avatarImgContainer.innerHTML = `<img src="${avatarUrl}" class="chat-avatar-img">`;
+                } else {
+                    avatarImgContainer.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>`;
+                }
+            }
+            chatBox.style.display = 'flex';
+            var chatDropdown = document.getElementById('chat-history-dropdown');
+            if (chatDropdown) chatDropdown.style.display = 'none';
+            loadGlobalChatMessages();
+            clearInterval(chatPollingInterval);
+            chatPollingInterval = setInterval(loadGlobalChatMessages, 2000);
+        }
+
+        function loadGlobalChatMessages() {
+            if (!activeChatUser) return;
+            var messagesArea = document.getElementById('chat-messages-container');
+            if (!messagesArea) return;
+            fetch('chat_handler.php?action=fetch&other_user=' + encodeURIComponent(activeChatUser))
+            .then(function(response) { return response.json(); })
+            .then(function(chatHistory) {
+                var wasAtBottom = messagesArea.scrollTop + messagesArea.clientHeight >= messagesArea.scrollHeight - 20;
+                messagesArea.innerHTML = '';
+                if (chatHistory.length === 0) {
+                    messagesArea.innerHTML = '<div class="chat-bubble received">Hello! Welcome to GEARBOX messaging.</div>';
+                    return;
+                }
+                chatHistory.forEach(function(chat) {
+                    var bubble = document.createElement('div');
+                    bubble.className = 'chat-bubble ' + chat.type;
+                    bubble.innerText = chat.message;
+                    messagesArea.appendChild(bubble);
+                });
+                if (wasAtBottom) {
+                    messagesArea.scrollTop = messagesArea.scrollHeight;
+                }
+            });
+        }
+
+        function sendGlobalMessage() {
+            var inputElement = document.getElementById('chat-message-input');
+            var emojiPanel = document.getElementById('chat-emoji-panel');
+            var messageText = inputElement.value.trim();
+            if (messageText === '' || !activeChatUser) return;
+            var formData = new FormData();
+            formData.append('receiver', activeChatUser);
+            formData.append('message', messageText);
+            fetch('chat_handler.php?action=send', {
+                method: 'POST',
+                body: formData
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(result) {
+                if (result.status === 'success') {
+                    inputElement.value = '';
+                    if(emojiPanel) emojiPanel.style.display = 'none';
+                    loadGlobalChatMessages();
+                }
+            });
+        }
+
+        function checkGlobalChatKey(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendGlobalMessage();
+            }
+        }
+
+        function toggleGlobalEmojiPanel() {
+            var emojiPanel = document.getElementById('chat-emoji-panel');
+            if (emojiPanel) {
+                emojiPanel.style.display = (emojiPanel.style.display === 'grid') ? 'none' : 'grid';
+            }
+        }
+
+        function appendGlobalEmoji(emoji) {
+            var inputElement = document.getElementById('chat-message-input');
+            if (inputElement) {
+                inputElement.value += emoji;
+                inputElement.focus();
+            }
+        }
+
+        function closeGlobalChatBox() {
+            var chatBox = document.getElementById('gearbox-chat-box');
+            var emojiPanel = document.getElementById('chat-emoji-panel');
+            if (chatBox) chatBox.style.display = 'none';
+            if (emojiPanel) emojiPanel.style.display = 'none';
+            clearInterval(chatPollingInterval);
+        }
+
+        function toggleChatHistoryDropdown(event) {
+            event.stopPropagation();
+            var dropdown = document.getElementById('chat-history-dropdown');
+            var profileDropdown = document.getElementById('profile-dropdown');
+            var hwDropdown = document.getElementById('hardware-dropdown');
+            var phoneDropdown = document.getElementById('phone-dropdown');
+            if (profileDropdown) profileDropdown.style.display = 'none';
+            if (hwDropdown && hwDropdown.classList.contains('show')) hwDropdown.classList.remove('show');
+            if (phoneDropdown && phoneDropdown.classList.contains('show')) phoneDropdown.classList.remove('show');
+            if (dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+            } else {
+                dropdown.style.display = 'block';
+                fetchLatestDropdownHistory();
+            }
+        }
+
+        function fetchLatestDropdownHistory() {
+            var container = document.getElementById('chat-dropdown-list-container');
+            if (!container) return;
+            fetch('fetch_chat_users.php')
+            .then(function(response) { return response.json(); })
+            .then(function(users) {
+                container.innerHTML = '';
+                if (users.length === 0) {
+                    container.innerHTML = '<div class="chat-history-empty">No recent conversations</div>';
+                    return;
+                }
+                users.forEach(function(user) {
+                    var row = document.createElement('div');
+                    row.className = 'chat-history-item';
+                    var avatarUrl = user.avatar_path ? user.avatar_path : '';
+                    row.onclick = function() {
+                        openFloatingChatFromDropdown(user.username, avatarUrl);
+                    };
+                    var avatarHtml = '';
+                    if (avatarUrl !== '') {
+                        avatarHtml = `<img src="${avatarUrl}">`;
+                    } else {
+                        avatarHtml = `
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                        `;
+                    }
+                    row.innerHTML = `
+                        <div class="chat-item-avatar">${avatarHtml}</div>
+                        <div class="chat-item-info">
+                            <div class="chat-item-name">@${user.username}</div>
+                        </div>
+                    `;
+                    container.appendChild(row);
+                });
+            });
+        }
+
         function toggleProfileDropdown(event) {
             event.stopPropagation();
             var dropdown = document.getElementById('profile-dropdown');
+            var chatDropdown = document.getElementById('chat-history-dropdown');
+            if (chatDropdown) chatDropdown.style.display = 'none';
             if (dropdown.style.display === 'block') {
                 dropdown.style.display = 'none';
             } else {
@@ -349,13 +556,13 @@ if (file_exists($json_file)) {
             var dropdown = document.getElementById('hardware-dropdown');
             var phoneDropdown = document.getElementById('phone-dropdown');
             var profileDropdown = document.getElementById('profile-dropdown');
-            
+            var chatDropdown = document.getElementById('chat-history-dropdown');
             if (profileDropdown) profileDropdown.style.display = 'none';
+            if (chatDropdown) chatDropdown.style.display = 'none';
             if (phoneDropdown) {
                 phoneDropdown.classList.remove('show');
                 setTimeout(function() { phoneDropdown.style.display = 'none'; }, 250);
             }
-            
             if (dropdown.classList.contains('show')) {
                 dropdown.classList.remove('show');
                 setTimeout(function() { if(!dropdown.classList.contains('show')) dropdown.style.display = 'none'; }, 250);
@@ -370,13 +577,13 @@ if (file_exists($json_file)) {
             var dropdown = document.getElementById('phone-dropdown');
             var hwDropdown = document.getElementById('hardware-dropdown');
             var profileDropdown = document.getElementById('profile-dropdown');
-            
+            var chatDropdown = document.getElementById('chat-history-dropdown');
             if (profileDropdown) profileDropdown.style.display = 'none';
+            if (chatDropdown) chatDropdown.style.display = 'none';
             if (hwDropdown) {
                 hwDropdown.classList.remove('show');
                 setTimeout(function() { hwDropdown.style.display = 'none'; }, 250);
             }
-            
             if (dropdown.classList.contains('show')) {
                 dropdown.classList.remove('show');
                 setTimeout(function() { if(!dropdown.classList.contains('show')) dropdown.style.display = 'none'; }, 250);
@@ -390,6 +597,10 @@ if (file_exists($json_file)) {
             var dropdown = document.getElementById('profile-dropdown');
             if (dropdown) {
                 dropdown.style.display = 'none';
+            }
+            var chatDropdown = document.getElementById('chat-history-dropdown');
+            if (chatDropdown) {
+                chatDropdown.style.display = 'none';
             }
             var hwDropdown = document.getElementById('hardware-dropdown');
             if (hwDropdown && hwDropdown.classList.contains('show')) {
@@ -407,16 +618,13 @@ if (file_exists($json_file)) {
             var searchInput = document.getElementById('global-user-search-input');
             var resultsBox = document.getElementById('search-results-box');
             var queryValue = searchInput.value.trim();
-
             if (queryValue === '') {
                 resultsBox.style.display = 'none';
                 resultsBox.innerHTML = '';
                 return;
             }
-
             var formData = new FormData();
             formData.append('username', queryValue);
-
             fetch('search_user.php', {
                 method: 'POST',
                 body: formData
@@ -424,20 +632,17 @@ if (file_exists($json_file)) {
             .then(function(response) { return response.json(); })
             .then(function(users) {
                 resultsBox.innerHTML = '';
-                
                 if (users.length === 0) {
                     resultsBox.innerHTML = '<div class="search-no-results">No results found</div>';
                     resultsBox.style.display = 'block';
                     return;
                 }
-
                 users.forEach(function(user) {
                     var row = document.createElement('div');
                     row.className = 'search-result-item';
                     row.onclick = function() {
                         window.location.href = 'profile.php?user=' + encodeURIComponent(user.username);
                     };
-
                     var avatarHtml = '';
                     if (user.avatar && user.avatar !== '') {
                         avatarHtml = `<img src="${user.avatar}" class="search-item-img">`;
@@ -449,7 +654,6 @@ if (file_exists($json_file)) {
                             </svg>
                         `;
                     }
-
                     row.innerHTML = `
                         <div class="search-item-avatar">${avatarHtml}</div>
                         <div class="search-item-info">
@@ -459,10 +663,17 @@ if (file_exists($json_file)) {
                     `;
                     resultsBox.appendChild(row);
                 });
-
                 resultsBox.style.display = 'block';
             });
         }
+
+        document.addEventListener('click', function(event) {
+            var searchContainer = document.querySelector('.header-search-container');
+            var resultsBox = document.getElementById('search-results-box');
+            if (resultsBox && !searchContainer.contains(event.target)) {
+                resultsBox.style.display = 'none';
+            }
+        });
     </script>
 </body>
 </html>

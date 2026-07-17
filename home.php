@@ -37,7 +37,8 @@ if (file_exists($spotlight_file)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GEARBOX - Home</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="global.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="home.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -55,7 +56,7 @@ if (file_exists($spotlight_file)) {
                 <rect x="10" y="46" width="12" height="8" rx="2" transform="rotate(45 50 50)" fill="black"/>
                 <rect x="78" y="46" width="12" height="8" rx="2" transform="rotate(45 50 50)" fill="black"/>
                 <circle cx="50" cy="50" r="22" stroke="black" stroke-width="7" fill="none"/>
-                <path d="M 50 39 A 11 11 0 1 0 61 50 L 50 50" stroke="black" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                <path d="M 50 39 A 11 11 0 1 0 61 50 L 50 50" stroke="black" stroke-width="6" stroke-linecap="round" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
             </svg>
             <div class="header-logo-text">GEARBOX</div>
         </div>
@@ -96,6 +97,44 @@ if (file_exists($spotlight_file)) {
                 <div class="search-results-dropdown" id="search-results-box"></div>
             </div>
 
+            <?php
+            $history_list = [];
+            if (isset($_SESSION['username'])) {
+                $current_user_escaped = mysqli_real_escape_string($conn, trim($_SESSION['username']));
+                $user_id_query = "SELECT id FROM users WHERE username = '$current_user_escaped'";
+                $user_id_result = mysqli_query($conn, $user_id_query);
+                $user_id_data = mysqli_fetch_assoc($user_id_result);
+                $current_user_id = isset($user_id_data['id']) ? intval($user_id_data['id']) : 0;
+
+                if ($current_user_id > 0) {
+                    $history_sql = "SELECT DISTINCT u.username, u.avatar_path 
+                                    FROM messages m
+                                    JOIN users u ON (m.sender_id = u.id OR m.receiver_id = u.id)
+                                    WHERE (m.sender_id = '$current_user_id' OR m.receiver_id = '$current_user_id')
+                                      AND u.id != '$current_user_id'
+                                    LIMIT 10";
+                    $history_result = mysqli_query($conn, $history_sql);
+                    if ($history_result) {
+                        while ($history_row = mysqli_fetch_assoc($history_result)) {
+                            $history_list[] = $history_row;
+                        }
+                    }
+                }
+            }
+            ?>
+
+            <div class="header-chat-history-wrapper">
+                <div class="header-chat-bubble-trigger" onclick="toggleChatHistoryDropdown(event)">
+                    <i class="fa-regular fa-paper-plane"></i>
+                </div>
+                <div class="chat-history-dropdown-menu" id="chat-history-dropdown">
+                    <div class="chat-history-header">Chats</div>
+                    <div class="chat-history-body" id="chat-dropdown-list-container">
+                        <div class="chat-history-empty">Loading conversations...</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="header-user-profile-wrapper">
                 <div class="header-user-profile" onclick="toggleProfileDropdown(event)">
                     <div class="avatar-placeholder <?php echo !empty($avatar) ? 'has-image' : ''; ?>" id="header-avatar-container">
@@ -114,6 +153,44 @@ if (file_exists($spotlight_file)) {
                     <a href="profile.php"><i class="fa-regular fa-user"></i> View Profile</a>
                     <a href="logout.php"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out</a>
                 </div>
+            </div>
+        </div>
+
+        <div class="gearbox-chat-popup" id="gearbox-chat-box" style="display: none;">
+            <div class="chat-header">
+                <div class="chat-header-user">
+                    <div class="chat-header-avatar"></div>
+                    <span class="chat-title-name">Chat</span>
+                </div>
+                <button class="chat-close-btn" onclick="closeGlobalChatBox()">&times;</button>
+            </div>
+            <div class="chat-messages-area" id="chat-messages-container"></div>
+            <div class="chat-emoji-picker-panel" id="chat-emoji-panel" style="display: none;">
+                <span onclick="appendGlobalEmoji('😀')">😀</span>
+                <span onclick="appendGlobalEmoji('😁')">😁</span>
+                <span onclick="appendGlobalEmoji('😂')">😂</span>
+                <span onclick="appendGlobalEmoji('😃')">😃</span>
+                <span onclick="appendGlobalEmoji('😄')">😄</span>
+                <span onclick="appendGlobalEmoji('😅')">😅</span>
+                <span onclick="appendGlobalEmoji('😆')">😆</span>
+                <span onclick="appendGlobalEmoji('😉')">😉</span>
+                <span onclick="appendGlobalEmoji('😊')">😊</span>
+                <span onclick="appendGlobalEmoji('😍')">😍</span>
+                <span onclick="appendGlobalEmoji('👍')">👍</span>
+                <span onclick="appendGlobalEmoji('❤️')">❤️</span>
+            </div>
+            <div class="chat-footer-input">
+                <div class="chat-input-wrapper">
+                    <input type="text" id="chat-message-input" placeholder="Type a message..." onkeydown="checkGlobalChatKey(event)">
+                    <button class="chat-emoji-trigger-btn" onclick="toggleGlobalEmojiPanel()">
+                        <i class="fa-regular fa-face-smile"></i>
+                    </button>
+                </div>
+                <button class="chat-send-btn" onclick="sendGlobalMessage()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L2 8.66l7.33 2.89L17 5l-6.55 7.67L13.33 22 22 2z"/>
+                    </svg>
+                </button>
             </div>
         </div>
     </header>
@@ -225,9 +302,174 @@ if (file_exists($spotlight_file)) {
     </div>
 
     <script>
+        var chatPollingInterval;
+        var activeChatUser = '';
+
+        function openFloatingChatFromDropdown(username, avatarUrl) {
+            var chatBox = document.getElementById('gearbox-chat-box');
+            if (!chatBox) return;
+            activeChatUser = username;
+            var nameLabel = chatBox.querySelector('.chat-title-name');
+            if (nameLabel) nameLabel.innerText = username;
+            var avatarImgContainer = chatBox.querySelector('.chat-header-avatar');
+            if (avatarImgContainer) {
+                if (avatarUrl && avatarUrl !== '') {
+                    avatarImgContainer.innerHTML = `<img src="${avatarUrl}" class="chat-avatar-img">`;
+                } else {
+                    avatarImgContainer.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>`;
+                }
+            }
+            chatBox.style.display = 'flex';
+            var chatDropdown = document.getElementById('chat-history-dropdown');
+            if (chatDropdown) chatDropdown.style.display = 'none';
+            loadGlobalChatMessages();
+            clearInterval(chatPollingInterval);
+            chatPollingInterval = setInterval(loadGlobalChatMessages, 2000);
+        }
+
+        function loadGlobalChatMessages() {
+            if (!activeChatUser) return;
+            var messagesArea = document.getElementById('chat-messages-container');
+            if (!messagesArea) return;
+            fetch('chat_handler.php?action=fetch&other_user=' + encodeURIComponent(activeChatUser))
+            .then(function(response) { return response.json(); })
+            .then(function(chatHistory) {
+                var wasAtBottom = messagesArea.scrollTop + messagesArea.clientHeight >= messagesArea.scrollHeight - 20;
+                messagesArea.innerHTML = '';
+                if (chatHistory.length === 0) {
+                    messagesArea.innerHTML = '<div class="chat-bubble received">Hello! Welcome to GEARBOX messaging.</div>';
+                    return;
+                }
+                chatHistory.forEach(function(chat) {
+                    var bubble = document.createElement('div');
+                    bubble.className = 'chat-bubble ' + chat.type;
+                    bubble.innerText = chat.message;
+                    messagesArea.appendChild(bubble);
+                });
+                if (wasAtBottom) {
+                    messagesArea.scrollTop = messagesArea.scrollHeight;
+                }
+            });
+        }
+
+        function sendGlobalMessage() {
+            var inputElement = document.getElementById('chat-message-input');
+            var emojiPanel = document.getElementById('chat-emoji-panel');
+            var messageText = inputElement.value.trim();
+            if (messageText === '' || !activeChatUser) return;
+            var formData = new FormData();
+            formData.append('receiver', activeChatUser);
+            formData.append('message', messageText);
+            fetch('chat_handler.php?action=send', {
+                method: 'POST',
+                body: formData
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(result) {
+                if (result.status === 'success') {
+                    inputElement.value = '';
+                    if(emojiPanel) emojiPanel.style.display = 'none';
+                    loadGlobalChatMessages();
+                }
+            });
+        }
+
+        function checkGlobalChatKey(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendGlobalMessage();
+            }
+        }
+
+        function toggleGlobalEmojiPanel() {
+            var emojiPanel = document.getElementById('chat-emoji-panel');
+            if (emojiPanel) {
+                emojiPanel.style.display = (emojiPanel.style.display === 'grid') ? 'none' : 'grid';
+            }
+        }
+
+        function appendGlobalEmoji(emoji) {
+            var inputElement = document.getElementById('chat-message-input');
+            if (inputElement) {
+                inputElement.value += emoji;
+                inputElement.focus();
+            }
+        }
+
+        function closeGlobalChatBox() {
+            var chatBox = document.getElementById('gearbox-chat-box');
+            var emojiPanel = document.getElementById('chat-emoji-panel');
+            if (chatBox) chatBox.style.display = 'none';
+            if (emojiPanel) emojiPanel.style.display = 'none';
+            clearInterval(chatPollingInterval);
+        }
+
+        function toggleChatHistoryDropdown(event) {
+            event.stopPropagation();
+            var dropdown = document.getElementById('chat-history-dropdown');
+            var profileDropdown = document.getElementById('profile-dropdown');
+            var hwDropdown = document.getElementById('hardware-dropdown');
+            var phoneDropdown = document.getElementById('phone-dropdown');
+            if (profileDropdown) profileDropdown.style.display = 'none';
+            if (hwDropdown && hwDropdown.classList.contains('show')) hwDropdown.classList.remove('show');
+            if (phoneDropdown && phoneDropdown.classList.contains('show')) phoneDropdown.classList.remove('show');
+            if (dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+            } else {
+                dropdown.style.display = 'block';
+                fetchLatestDropdownHistory();
+            }
+        }
+
+        function fetchLatestDropdownHistory() {
+            var container = document.getElementById('chat-dropdown-list-container');
+            if (!container) return;
+            fetch('fetch_chat_users.php')
+            .then(function(response) { return response.json(); })
+            .then(function(users) {
+                container.innerHTML = '';
+                if (users.length === 0) {
+                    container.innerHTML = '<div class="chat-history-empty">No recent conversations</div>';
+                    return;
+                }
+                users.forEach(function(user) {
+                    var row = document.createElement('div');
+                    row.className = 'chat-history-item';
+                    var avatarUrl = user.avatar_path ? user.avatar_path : '';
+                    row.onclick = function() {
+                        openFloatingChatFromDropdown(user.username, avatarUrl);
+                    };
+                    var avatarHtml = '';
+                    if (avatarUrl !== '') {
+                        avatarHtml = `<img src="${avatarUrl}">`;
+                    } else {
+                        avatarHtml = `
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                        `;
+                    }
+                    row.innerHTML = `
+                        <div class="chat-item-avatar">${avatarHtml}</div>
+                        <div class="chat-item-info">
+                            <div class="chat-item-name">@${user.username}</div>
+                        </div>
+                    `;
+                    container.appendChild(row);
+                });
+            });
+        }
+
         function toggleProfileDropdown(event) {
             event.stopPropagation();
             var dropdown = document.getElementById('profile-dropdown');
+            var chatDropdown = document.getElementById('chat-history-dropdown');
+            if (chatDropdown) chatDropdown.style.display = 'none';
             if (dropdown.style.display === 'block') {
                 dropdown.style.display = 'none';
             } else {
@@ -240,13 +482,13 @@ if (file_exists($spotlight_file)) {
             var dropdown = document.getElementById('hardware-dropdown');
             var phoneDropdown = document.getElementById('phone-dropdown');
             var profileDropdown = document.getElementById('profile-dropdown');
-            
+            var chatDropdown = document.getElementById('chat-history-dropdown');
             if (profileDropdown) profileDropdown.style.display = 'none';
+            if (chatDropdown) chatDropdown.style.display = 'none';
             if (phoneDropdown) {
                 phoneDropdown.classList.remove('show');
                 setTimeout(function() { phoneDropdown.style.display = 'none'; }, 250);
             }
-            
             if (dropdown.classList.contains('show')) {
                 dropdown.classList.remove('show');
                 setTimeout(function() { if(!dropdown.classList.contains('show')) dropdown.style.display = 'none'; }, 250);
@@ -261,13 +503,13 @@ if (file_exists($spotlight_file)) {
             var dropdown = document.getElementById('phone-dropdown');
             var hwDropdown = document.getElementById('hardware-dropdown');
             var profileDropdown = document.getElementById('profile-dropdown');
-            
+            var chatDropdown = document.getElementById('chat-history-dropdown');
             if (profileDropdown) profileDropdown.style.display = 'none';
+            if (chatDropdown) chatDropdown.style.display = 'none';
             if (hwDropdown) {
                 hwDropdown.classList.remove('show');
                 setTimeout(function() { hwDropdown.style.display = 'none'; }, 250);
             }
-            
             if (dropdown.classList.contains('show')) {
                 dropdown.classList.remove('show');
                 setTimeout(function() { if(!dropdown.classList.contains('show')) dropdown.style.display = 'none'; }, 250);
@@ -281,6 +523,10 @@ if (file_exists($spotlight_file)) {
             var dropdown = document.getElementById('profile-dropdown');
             if (dropdown) {
                 dropdown.style.display = 'none';
+            }
+            var chatDropdown = document.getElementById('chat-history-dropdown');
+            if (chatDropdown) {
+                chatDropdown.style.display = 'none';
             }
             var hwDropdown = document.getElementById('hardware-dropdown');
             if (hwDropdown && hwDropdown.classList.contains('show')) {
@@ -298,16 +544,13 @@ if (file_exists($spotlight_file)) {
             var searchInput = document.getElementById('global-user-search-input');
             var resultsBox = document.getElementById('search-results-box');
             var queryValue = searchInput.value.trim();
-
             if (queryValue === '') {
                 resultsBox.style.display = 'none';
                 resultsBox.innerHTML = '';
                 return;
             }
-
             var formData = new FormData();
             formData.append('username', queryValue);
-
             fetch('search_user.php', {
                 method: 'POST',
                 body: formData
@@ -315,20 +558,17 @@ if (file_exists($spotlight_file)) {
             .then(function(response) { return response.json(); })
             .then(function(users) {
                 resultsBox.innerHTML = '';
-                
                 if (users.length === 0) {
                     resultsBox.innerHTML = '<div class="search-no-results">No results found</div>';
                     resultsBox.style.display = 'block';
                     return;
                 }
-
                 users.forEach(function(user) {
                     var row = document.createElement('div');
                     row.className = 'search-result-item';
                     row.onclick = function() {
                         window.location.href = 'profile.php?user=' + encodeURIComponent(user.username);
                     };
-
                     var avatarHtml = '';
                     if (user.avatar && user.avatar !== '') {
                         avatarHtml = `<img src="${user.avatar}" class="search-item-img">`;
@@ -340,7 +580,6 @@ if (file_exists($spotlight_file)) {
                             </svg>
                         `;
                     }
-
                     row.innerHTML = `
                         <div class="search-item-avatar">${avatarHtml}</div>
                         <div class="search-item-info">
@@ -350,7 +589,6 @@ if (file_exists($spotlight_file)) {
                     `;
                     resultsBox.appendChild(row);
                 });
-
                 resultsBox.style.display = 'block';
             });
         }
@@ -365,7 +603,6 @@ if (file_exists($spotlight_file)) {
 
         var viewport = document.getElementById('brand-carousel-viewport');
         var track = document.getElementById('brand-carousel-track');
-        
         var isDown = false;
         var startX;
         var scrollLeft;
@@ -378,45 +615,29 @@ if (file_exists($spotlight_file)) {
             scrollLeft = viewport.scrollLeft;
             hasDragged = false;
         });
-
-        viewport.addEventListener('mouseleave', function() {
-            isDown = false;
-        });
-
-        viewport.addEventListener('mouseup', function() {
-            isDown = false;
-        });
-
+        viewport.addEventListener('mouseleave', function() { isDown = false; });
+        viewport.addEventListener('mouseup', function() { isDown = false; });
         viewport.addEventListener('mousemove', function(e) {
             if(!isDown) return;
             e.preventDefault();
             var x = e.pageX - viewport.offsetLeft;
             var walk = (x - startX) * walkMultiplier;
             viewport.scrollLeft = scrollLeft - walk;
-            if (Math.abs(walk) > 5) {
-                hasDragged = true;
-            }
+            if (Math.abs(walk) > 5) { hasDragged = true; }
         });
-
         viewport.addEventListener('touchstart', function(e) {
             isDown = true;
             startX = e.touches[0].pageX - viewport.offsetLeft;
             scrollLeft = viewport.scrollLeft;
             hasDragged = false;
         }, { passive: true });
-
-        viewport.addEventListener('touchend', function() {
-            isDown = false;
-        });
-
+        viewport.addEventListener('touchend', function() { isDown = false; });
         viewport.addEventListener('touchmove', function(e) {
             if(!isDown) return;
             var x = e.touches[0].pageX - viewport.offsetLeft;
             var walk = (x - startX) * walkMultiplier;
             viewport.scrollLeft = scrollLeft - walk;
-            if (Math.abs(walk) > 5) {
-                hasDragged = true;
-            }
+            if (Math.abs(walk) > 5) { hasDragged = true; }
         }, { passive: true });
 
         function handleCardClick(event, redirectUrl) {

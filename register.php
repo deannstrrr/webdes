@@ -30,7 +30,8 @@ if (isset($_POST['register'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register Account</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="global.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="login.css?v=<?php echo time(); ?>">
 </head>
 <body>
     <div class="login-card">

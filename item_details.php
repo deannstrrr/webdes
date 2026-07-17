@@ -17,61 +17,107 @@ $type = isset($_GET['type']) ? $_GET['type'] : 'cpu';
 $brand_name = isset($_GET['brand']) ? $_GET['brand'] : '';
 $item_name = isset($_GET['name']) ? $_GET['name'] : '';
 
-$json_file = "cpu_list.json";
-if ($type === 'gpu') $json_file = "gpu_list.json";
-elseif ($type === 'motherboard') $json_file = "motherboard_list.json";
-elseif ($type === 'ram') $json_file = "ram_list.json";
-elseif ($type === 'fan') $json_file = "fan_list.json";
-elseif ($type === 'psu') $json_file = "psu_list.json";
-elseif ($type === 'cooling') $json_file = "cooling_list.json";
-elseif ($type === 'phone') $json_file = "phone_list.json";
+$table_map = [
+    'cpu' => 'cpus',
+    'gpu' => 'gpus',
+    'motherboard' => 'motherboards',
+    'ram' => 'ram',
+    'fan' => 'fans',
+    'psu' => 'psus',
+    'cooling' => 'cooling',
+    'phone' => 'phones'
+];
+
+$table = $table_map[$type] ?? 'cpus';
+$b_esc = mysqli_real_escape_string($conn, $brand_name);
+$n_esc = mysqli_real_escape_string($conn, $item_name);
+
+$item_query = "SELECT * FROM `$table` WHERE LOWER(brand) = LOWER('$b_esc') AND LOWER(name) = LOWER('$n_esc') LIMIT 1";
+$item_result = mysqli_query($conn, $item_query);
+$row = mysqli_fetch_assoc($item_result);
 
 $specs = null;
-if (file_exists($json_file)) {
-    $json_data = file_get_contents($json_file);
-    $raw_array = json_decode($json_data, true);
-    if (is_array($raw_array) && isset($raw_array[$brand_name][$item_name])) {
-        $specs = $raw_array[$brand_name][$item_name];
+if ($row) {
+    if ($type === 'cpu') {
+        $specs = [
+            'Socket' => $row['socket'],
+            'Cores / Threads' => $row['cores_threads'],
+            'Clock Speed' => $row['clock_speed']
+        ];
+    } elseif ($type === 'gpu') {
+        $specs = [
+            'Interface' => $row['interface'],
+            'VRAM' => $row['vram'],
+            'TDP' => $row['tdp'],
+            'Released' => $row['released']
+        ];
+    } elseif ($type === 'motherboard') {
+        $specs = [
+            'Socket' => $row['socket'],
+            'Chipset' => $row['chipset'],
+            'Form Factor' => $row['form_factor'],
+            'RAM Slots' => $row['ram_slots'],
+            'Released' => $row['released']
+        ];
+    } elseif ($type === 'ram') {
+        $specs = [
+            'Type' => $row['type'],
+            'Speed' => $row['speed'],
+            'Voltage' => $row['voltage'],
+            'Format' => $row['format'],
+            'Released' => $row['released']
+        ];
+    } elseif ($type === 'fan') {
+        $specs = [
+            'Size' => $row['size'],
+            'Speed' => $row['speed'],
+            'Airflow' => $row['airflow'],
+            'Noise' => $row['noise'],
+            'Released' => $row['released']
+        ];
+    } elseif ($type === 'psu') {
+        $specs = [
+            'Wattage' => $row['wattage'],
+            'Efficiency' => $row['efficiency'],
+            'Modular' => $row['modular'],
+            'Form Factor' => $row['form_factor'],
+            'Released' => $row['released']
+        ];
+    } elseif ($type === 'cooling') {
+        $specs = [
+            'Type' => $row['type'],
+            'Radiator Size' => $row['radiator_size'],
+            'Fans' => $row['fans'],
+            'TDP Rating' => $row['tdp_rating'],
+            'Released' => $row['released']
+        ];
+    } elseif ($type === 'phone') {
+        $specs = [
+            'Chipset' => $row['chipset'],
+            'Screen' => $row['screen'],
+            'Camera' => $row['camera'],
+            'Battery' => $row['battery'],
+            'Released' => $row['released']
+        ];
     }
-}
-
-if (!$specs) {
-    echo "Item not found.";
-    exit();
 }
 
 $item_id = md5($brand_name . '_' . $item_name);
-$ratings_db_file = "ratings_data.json";
-$ratings_log = [];
-
-if (file_exists($ratings_db_file)) {
-    $ratings_log = json_decode(file_get_contents($ratings_db_file), true);
-    if (!is_array($ratings_log)) {
-        $ratings_log = [];
-    }
-}
-
-$comments_db_file = "comments_data.json";
-$comments_log = [];
-
-if (file_exists($comments_db_file)) {
-    $comments_log = json_decode(file_get_contents($comments_db_file), true);
-    if (!is_array($comments_log)) {
-        $comments_log = [];
-    }
-}
+$item_id_esc = mysqli_real_escape_string($conn, $item_id);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'submit_rating') {
-        $new_score = isset($_POST['score']) ? intval($_POST['score']) : 5;
-        if ($new_score >= 1 && $new_score <= 5) {
-            if (!isset($ratings_log[$item_id])) {
-                $ratings_log[$item_id] = [];
-            }
-            $ratings_log[$item_id][$logged_in_user] = $new_score;
-            file_put_contents($ratings_db_file, json_encode($ratings_log));
-        }
-    } elseif ($_POST['action'] === 'submit_comment') {
+    $new_score = isset($_POST['score']) ? intval($_POST['score']) : 5;
+    if ($new_score >= 1 && $new_score <= 5) {
+        $item_id_esc = mysqli_real_escape_string($conn, $item_id);
+        $user_esc = mysqli_real_escape_string($conn, $logged_in_user);
+        
+        $rating_save_query = "INSERT INTO ratings (item_id, username, score) 
+                              VALUES ('$item_id_esc', '$user_esc', '$new_score') 
+                              ON DUPLICATE KEY UPDATE score = '$new_score'";
+        mysqli_query($conn, $rating_save_query);
+    }
+}  elseif ($_POST['action'] === 'submit_comment') {
         $text = isset($_POST['comment_text']) ? trim($_POST['comment_text']) : '';
         if ($text !== '' || !empty($_FILES['comment_image']['name'])) {
             $attached_image_path = '';
@@ -86,19 +132,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 }
             }
 
-            $new_comment = [
-                'username' => $logged_in_user,
-                'avatar' => $logged_in_avatar,
-                'text' => $text,
-                'image' => $attached_image_path,
-                'timestamp' => time()
-            ];
+            $text_esc = mysqli_real_escape_string($conn, $text);
+            $img_esc = mysqli_real_escape_string($conn, $attached_image_path);
+            $avatar_esc = mysqli_real_escape_string($conn, $logged_in_avatar);
+            $user_esc = mysqli_real_escape_string($conn, $logged_in_user);
+            $current_time = time();
 
-            if (!isset($comments_log[$item_id])) {
-                $comments_log[$item_id] = [];
-            }
-            array_unshift($comments_log[$item_id], $new_comment);
-            file_put_contents($comments_db_file, json_encode($comments_log));
+            $comment_save_query = "INSERT INTO comments (item_id, username, avatar, text, image, timestamp) 
+                                  VALUES ('$item_id_esc', '$user_esc', '$avatar_esc', '$text_esc', '$img_esc', '$current_time')";
+            mysqli_query($conn, $comment_save_query);
         }
     }
     header("Location: item_details.php?type=" . urlencode($type) . "&brand=" . urlencode($brand_name) . "&name=" . urlencode($item_name));
@@ -109,18 +151,31 @@ $total_reviews = 0;
 $average_score = 0.0;
 $user_current_rating = 0;
 
-if (isset($ratings_log[$item_id]) && is_array($ratings_log[$item_id])) {
-    $item_scores = $ratings_log[$item_id];
-    $total_reviews = count($item_scores);
+$rating_query = "SELECT username, score FROM ratings WHERE item_id = '$item_id_esc'";
+$rating_result = mysqli_query($conn, $rating_query);
+
+if ($rating_result) {
+    $total_reviews = mysqli_num_rows($rating_result);
     if ($total_reviews > 0) {
-        $average_score = round(array_sum($item_scores) / $total_reviews, 1);
-    }
-    if (isset($item_scores[$logged_in_user])) {
-        $user_current_rating = $item_scores[$logged_in_user];
+        $sum = 0;
+        while ($r_row = mysqli_fetch_assoc($rating_result)) {
+            $sum += intval($r_row['score']);
+            if ($r_row['username'] === $logged_in_user) {
+                $user_current_rating = intval($r_row['score']);
+            }
+        }
+        $average_score = round($sum / $total_reviews, 1);
     }
 }
+$active_comments = [];
+$comment_fetch_query = "SELECT username, avatar, text, image, timestamp FROM comments WHERE item_id = '$item_id_esc' ORDER BY timestamp DESC";
+$comment_result = mysqli_query($conn, $comment_fetch_query);
 
-$active_comments = isset($comments_log[$item_id]) ? $comments_log[$item_id] : [];
+if ($comment_result) {
+    while ($c_row = mysqli_fetch_assoc($comment_result)) {
+        $active_comments[] = $c_row;
+    }
+}
 
 function formatCommentTime($timestamp) {
     $diff = time() - $timestamp;
@@ -169,7 +224,8 @@ if (strpos($item_brand_lower, 'nvidia') !== false) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GEARBOX - <?php echo htmlspecialchars($item_name); ?></title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="global.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="item_details.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body style="background-color: #f0f2f5;">
@@ -228,6 +284,61 @@ if (strpos($item_brand_lower, 'nvidia') !== false) {
                 <div class="search-results-dropdown" id="search-results-box"></div>
             </div>
 
+            <?php
+            $history_list = [];
+            if (isset($_SESSION['username'])) {
+                $current_user_escaped = mysqli_real_escape_string($conn, trim($_SESSION['username']));
+                $user_id_query = "SELECT id FROM users WHERE username = '$current_user_escaped'";
+                $user_id_result = mysqli_query($conn, $user_id_query);
+                $user_id_data = mysqli_fetch_assoc($user_id_result);
+                $current_user_id = isset($user_id_data['id']) ? intval($user_id_data['id']) : 0;
+
+                if ($current_user_id > 0) {
+                    $history_sql = "SELECT DISTINCT u.username, u.avatar_path 
+                                    FROM messages m
+                                    JOIN users u ON (m.sender_id = u.id OR m.receiver_id = u.id)
+                                    WHERE (m.sender_id = '$current_user_id' OR m.receiver_id = '$current_user_id')
+                                      AND u.id != '$current_user_id'
+                                    LIMIT 10";
+                    $history_result = mysqli_query($conn, $history_sql);
+                    if ($history_result) {
+                        while ($history_row = mysqli_fetch_assoc($history_result)) {
+                            $history_list[] = $history_row;
+                        }
+                    }
+                }
+            }
+            ?>
+
+            <div class="header-chat-history-wrapper">
+                <div class="header-chat-bubble-trigger" onclick="toggleChatHistoryDropdown(event)">
+                    <i class="fa-regular fa-paper-plane"></i>
+                </div>
+                <div class="chat-history-dropdown-menu" id="chat-history-dropdown">
+                    <div class="chat-history-header">Chats</div>
+                    <div class="chat-history-body">
+                        <?php if (!empty($history_list)) { ?>
+                            <?php foreach ($history_list as $chat_user) { ?>
+                                <div class="chat-history-item" onclick="openFloatingChatFromDropdown('<?php echo htmlspecialchars($chat_user['username']); ?>', '<?php echo htmlspecialchars($chat_user['avatar_path']); ?>')">
+                                    <div class="chat-item-avatar">
+                                        <?php if (!empty($chat_user['avatar_path'])) { ?>
+                                            <img src="<?php echo htmlspecialchars($chat_user['avatar_path']); ?>">
+                                        <?php } else { ?>
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                        <?php } ?>
+                                    </div>
+                                    <div class="chat-item-info">
+                                        <div class="chat-item-name">@<?php echo htmlspecialchars($chat_user['username']); ?></div>
+                                    </div>
+                                </div>
+                            <?php } ?>
+                        <?php } else { ?>
+                            <div class="chat-history-empty">No recent conversations</div>
+                        <?php } ?>
+                    </div>
+                </div>
+            </div>
+
             <div class="header-user-profile-wrapper">
                 <div class="header-user-profile" onclick="toggleProfileDropdown(event)">
                     <div class="avatar-placeholder <?php echo !empty($logged_in_avatar) ? 'has-image' : ''; ?>" id="header-avatar-container">
@@ -246,6 +357,44 @@ if (strpos($item_brand_lower, 'nvidia') !== false) {
                     <a href="profile.php"><i class="fa-regular fa-user"></i> View Profile</a>
                     <a href="logout.php"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out</a>
                 </div>
+            </div>
+        </div>
+
+        <div class="gearbox-chat-popup" id="gearbox-chat-box" style="display: none;">
+            <div class="chat-header">
+                <div class="chat-header-user">
+                    <div class="chat-header-avatar"></div>
+                    <span class="chat-title-name">Chat</span>
+                </div>
+                <button class="chat-close-btn" onclick="closeGlobalChatBox()">&times;</button>
+            </div>
+            <div class="chat-messages-area" id="chat-messages-container"></div>
+            <div class="chat-emoji-picker-panel" id="chat-emoji-panel" style="display: none;">
+                <span onclick="appendGlobalEmoji('😀')">😀</span>
+                <span onclick="appendGlobalEmoji('😁')">😁</span>
+                <span onclick="appendGlobalEmoji('😂')">😂</span>
+                <span onclick="appendGlobalEmoji('😃')">😃</span>
+                <span onclick="appendGlobalEmoji('😄')">😄</span>
+                <span onclick="appendGlobalEmoji('😅')">😅</span>
+                <span onclick="appendGlobalEmoji('😆')">😆</span>
+                <span onclick="appendGlobalEmoji('😉')">😉</span>
+                <span onclick="appendGlobalEmoji('😊')">😊</span>
+                <span onclick="appendGlobalEmoji('😍')">😍</span>
+                <span onclick="appendGlobalEmoji('👍')">👍</span>
+                <span onclick="appendGlobalEmoji('❤️')">❤️</span>
+            </div>
+            <div class="chat-footer-input">
+                <div class="chat-input-wrapper">
+                    <input type="text" id="chat-message-input" placeholder="Type a message..." onkeydown="checkGlobalChatKey(event)">
+                    <button class="chat-emoji-trigger-btn" onclick="toggleGlobalEmojiPanel()">
+                        <i class="fa-regular fa-face-smile"></i>
+                    </button>
+                </div>
+                <button class="chat-send-btn" onclick="sendGlobalMessage()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L2 8.66l7.33 2.89L17 5l-6.55 7.67L13.33 22 22 2z"/>
+                    </svg>
+                </button>
             </div>
         </div>
     </header>
@@ -400,6 +549,179 @@ if (strpos($item_brand_lower, 'nvidia') !== false) {
     </div>
 
     <script>
+        var chatPollingInterval;
+        var activeChatUser = '';
+
+        function openFloatingChatFromDropdown(username, avatarUrl) {
+            var chatBox = document.getElementById('gearbox-chat-box');
+            if (!chatBox) return;
+            activeChatUser = username;
+            var nameLabel = chatBox.querySelector('.chat-title-name');
+            if (nameLabel) nameLabel.innerText = username;
+            var avatarImgContainer = chatBox.querySelector('.chat-header-avatar');
+            if (avatarImgContainer) {
+                if (avatarUrl && avatarUrl !== '') {
+                    avatarImgContainer.innerHTML = `<img src="${avatarUrl}" class="chat-avatar-img">`;
+                } else {
+                    avatarImgContainer.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>`;
+                }
+            }
+            chatBox.style.display = 'flex';
+            var chatDropdown = document.getElementById('chat-history-dropdown');
+            if (chatDropdown) chatDropdown.style.display = 'none';
+            loadGlobalChatMessages();
+            clearInterval(chatPollingInterval);
+            chatPollingInterval = setInterval(loadGlobalChatMessages, 2000);
+        }
+
+        function loadGlobalChatMessages() {
+            if (!activeChatUser) return;
+            var messagesArea = document.getElementById('chat-messages-container');
+            if (!messagesArea) return;
+            fetch('chat_handler.php?action=fetch&other_user=' + encodeURIComponent(activeChatUser))
+            .then(function(response) { return response.json(); })
+            .then(function(chatHistory) {
+                var wasAtBottom = messagesArea.scrollTop + messagesArea.clientHeight >= messagesArea.scrollHeight - 20;
+                messagesArea.innerHTML = '';
+                if (chatHistory.length === 0) {
+                    messagesArea.innerHTML = '<div class="chat-bubble received">Hello! Welcome to GEARBOX messaging.</div>';
+                    return;
+                }
+                chatHistory.forEach(function(chat) {
+                    var bubble = document.createElement('div');
+                    bubble.className = 'chat-bubble ' + chat.type;
+                    bubble.innerText = chat.message;
+                    messagesArea.appendChild(bubble);
+                });
+                if (wasAtBottom) {
+                    messagesArea.scrollTop = messagesArea.scrollHeight;
+                }
+            });
+        }
+
+        function sendGlobalMessage() {
+            var inputElement = document.getElementById('chat-message-input');
+            var emojiPanel = document.getElementById('chat-emoji-panel');
+            var messageText = inputElement.value.trim();
+            if (messageText === '' || !activeChatUser) return;
+            var formData = new FormData();
+            formData.append('receiver', activeChatUser);
+            formData.append('message', messageText);
+            fetch('chat_handler.php?action=send', {
+                method: 'POST',
+                body: formData
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(result) {
+                if (result.status === 'success') {
+                    inputElement.value = '';
+                    if(emojiPanel) emojiPanel.style.display = 'none';
+                    loadGlobalChatMessages();
+                }
+            });
+        }
+
+        function checkGlobalChatKey(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendGlobalMessage();
+            }
+        }
+
+        function toggleGlobalEmojiPanel() {
+            var emojiPanel = document.getElementById('chat-emoji-panel');
+            if (emojiPanel) {
+                emojiPanel.style.display = (emojiPanel.style.display === 'grid') ? 'none' : 'grid';
+            }
+        }
+
+        function appendGlobalEmoji(emoji) {
+            var inputElement = document.getElementById('chat-message-input');
+            if (inputElement) {
+                inputElement.value += emoji;
+                inputElement.focus();
+            }
+        }
+
+        function closeGlobalChatBox() {
+            var chatBox = document.getElementById('gearbox-chat-box');
+            var emojiPanel = document.getElementById('chat-emoji-panel');
+            if (chatBox) chatBox.style.display = 'none';
+            if (emojiPanel) emojiPanel.style.display = 'none';
+            clearInterval(chatPollingInterval);
+        }
+
+        function toggleChatHistoryDropdown(event) {
+    event.stopPropagation();
+    var dropdown = document.getElementById('chat-history-dropdown');
+    var profileDropdown = document.getElementById('profile-dropdown');
+    var hwDropdown = document.getElementById('hardware-dropdown');
+    var phoneDropdown = document.getElementById('phone-dropdown');
+    
+    if (profileDropdown) profileDropdown.style.display = 'none';
+    if (hwDropdown && hwDropdown.classList.contains('show')) hwDropdown.classList.remove('show');
+    if (phoneDropdown && phoneDropdown.classList.contains('show')) phoneDropdown.classList.remove('show');
+
+    if (dropdown.style.display === 'block') {
+        dropdown.style.display = 'none';
+    } else {
+        dropdown.style.display = 'block';
+        fetchLatestDropdownHistory();
+    }
+}
+
+function fetchLatestDropdownHistory() {
+    var container = document.getElementById('chat-dropdown-list-container');
+    if (!container) return;
+
+    fetch('fetch_chat_users.php')
+    .then(function(response) { return response.json(); })
+    .then(function(users) {
+        container.innerHTML = '';
+        
+        if (users.length === 0) {
+            container.innerHTML = '<div class="chat-history-empty">No recent conversations</div>';
+            return;
+        }
+
+        users.forEach(function(user) {
+            var row = document.createElement('div');
+            row.className = 'chat-history-item';
+            
+            var avatarUrl = user.avatar_path ? user.avatar_path : '';
+            var escapedUsername = user.username.replace(/'/g, "\\'");
+            
+            row.onclick = function() {
+                openFloatingChatFromDropdown(user.username, avatarUrl);
+            };
+
+            var avatarHtml = '';
+            if (avatarUrl !== '') {
+                avatarHtml = `<img src="${avatarUrl}">`;
+            } else {
+                avatarHtml = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                `;
+            }
+
+            row.innerHTML = `
+                <div class="chat-item-avatar">${avatarHtml}</div>
+                <div class="chat-item-info">
+                    <div class="chat-item-name">@${user.username}</div>
+                </div>
+            `;
+            container.appendChild(row);
+        });
+    });
+}
+
         function handleImageSelectionNotice(input) {
             var label = document.getElementById('file-selected-alert-label');
             if (input.files && input.files[0]) {
@@ -432,13 +754,13 @@ if (strpos($item_brand_lower, 'nvidia') !== false) {
             var dropdown = document.getElementById('hardware-dropdown');
             var phoneDropdown = document.getElementById('phone-dropdown');
             var profileDropdown = document.getElementById('profile-dropdown');
-            
+            var chatDropdown = document.getElementById('chat-history-dropdown');
             if (profileDropdown) profileDropdown.style.display = 'none';
+            if (chatDropdown) chatDropdown.style.display = 'none';
             if (phoneDropdown) {
                 phoneDropdown.classList.remove('show');
                 setTimeout(function() { phoneDropdown.style.display = 'none'; }, 250);
             }
-            
             if (dropdown.classList.contains('show')) {
                 dropdown.classList.remove('show');
                 setTimeout(function() { if(!dropdown.classList.contains('show')) dropdown.style.display = 'none'; }, 250);
@@ -453,13 +775,13 @@ if (strpos($item_brand_lower, 'nvidia') !== false) {
             var dropdown = document.getElementById('phone-dropdown');
             var hwDropdown = document.getElementById('hardware-dropdown');
             var profileDropdown = document.getElementById('profile-dropdown');
-            
+            var chatDropdown = document.getElementById('chat-history-dropdown');
             if (profileDropdown) profileDropdown.style.display = 'none';
+            if (chatDropdown) chatDropdown.style.display = 'none';
             if (hwDropdown) {
                 hwDropdown.classList.remove('show');
                 setTimeout(function() { hwDropdown.style.display = 'none'; }, 250);
             }
-            
             if (dropdown.classList.contains('show')) {
                 dropdown.classList.remove('show');
                 setTimeout(function() { if(!dropdown.classList.contains('show')) dropdown.style.display = 'none'; }, 250);
@@ -472,6 +794,8 @@ if (strpos($item_brand_lower, 'nvidia') !== false) {
         function toggleProfileDropdown(event) {
             event.stopPropagation();
             var dropdown = document.getElementById('profile-dropdown');
+            var chatDropdown = document.getElementById('chat-history-dropdown');
+            if (chatDropdown) chatDropdown.style.display = 'none';
             if (dropdown.style.display === 'block') {
                 dropdown.style.display = 'none';
             } else {
@@ -482,6 +806,18 @@ if (strpos($item_brand_lower, 'nvidia') !== false) {
         document.addEventListener('click', function() {
             var dropdown = document.getElementById('profile-dropdown');
             if (dropdown) dropdown.style.display = 'none';
+            var chatDropdown = document.getElementById('chat-history-dropdown');
+            if (chatDropdown) chatDropdown.style.display = 'none';
+            var hwDropdown = document.getElementById('hardware-dropdown');
+            if (hwDropdown && hwDropdown.classList.contains('show')) {
+                hwDropdown.classList.remove('show');
+                setTimeout(function() { if(!hwDropdown.classList.contains('show')) hwDropdown.style.display = 'none'; }, 250);
+            }
+            var pDropdown = document.getElementById('phone-dropdown');
+            if (pDropdown && pDropdown.classList.contains('show')) {
+                pDropdown.classList.remove('show');
+                setTimeout(function() { if(!pDropdown.classList.contains('show')) pDropdown.style.display = 'none'; }, 250);
+            }
         });
     </script>
 </body>

@@ -54,6 +54,29 @@ if (empty($links_array)) {
     ];
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['action']) && $_POST['action'] === 'toggle_follow') {
+        $follower = mysqli_real_escape_string($conn, $logged_in_user);
+        $following = mysqli_real_escape_string($conn, $_POST['target_user']);
+
+        if (!empty($follower) && !empty($following)) {
+            $check_query = "SELECT * FROM follows WHERE follower_username = '$follower' AND following_username = '$following'";
+            $check_res = mysqli_query($conn, $check_query);
+
+            if (mysqli_num_rows($check_res) > 0) {
+                $follow_stmt = "DELETE FROM follows WHERE follower_username = '$follower' AND following_username = '$following'";
+            } else {
+                $follow_stmt = "INSERT INTO follows (follower_username, following_username) VALUES ('$follower', '$following')";
+            }
+            mysqli_query($conn, $follow_stmt);
+        }
+        
+        header("Location: profile.php?user=" . urlencode($following));
+        exit();
+    }
+}
+
+
 $is_own_profile = ($logged_in_user === $username);
 ?>
 <!DOCTYPE html>
@@ -62,7 +85,8 @@ $is_own_profile = ($logged_in_user === $username);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GEARBOX - <?php echo htmlspecialchars($username); ?>'s Profile</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="global.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="profile.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
 </head>
@@ -122,11 +146,49 @@ $is_own_profile = ($logged_in_user === $username);
                 <div class="search-results-dropdown" id="search-results-box"></div>
             </div>
 
+            <?php
+            $history_list = [];
+            if (isset($_SESSION['username'])) {
+                $current_user_escaped = mysqli_real_escape_string($conn, trim($_SESSION['username']));
+                $user_id_query = "SELECT id FROM users WHERE username = '$current_user_escaped'";
+                $user_id_result = mysqli_query($conn, $user_id_query);
+                $user_id_data = mysqli_fetch_assoc($user_id_result);
+                $current_user_id = isset($user_id_data['id']) ? intval($user_id_data['id']) : 0;
+
+                if ($current_user_id > 0) {
+                    $history_sql = "SELECT DISTINCT u.username, u.avatar_path 
+                                    FROM messages m
+                                    JOIN users u ON (m.sender_id = u.id OR m.receiver_id = u.id)
+                                    WHERE (m.sender_id = '$current_user_id' OR m.receiver_id = '$current_user_id')
+                                      AND u.id != '$current_user_id'
+                                    LIMIT 10";
+                    $history_result = mysqli_query($conn, $history_sql);
+                    if ($history_result) {
+                        while ($history_row = mysqli_fetch_assoc($history_result)) {
+                            $history_list[] = $history_row;
+                        }
+                    }
+                }
+            }
+            ?>
+
+            <div class="header-chat-history-wrapper">
+                <div class="header-chat-bubble-trigger" onclick="toggleChatHistoryDropdown(event)">
+                    <i class="fa-regular fa-paper-plane"></i>
+                </div>
+                <div class="chat-history-dropdown-menu" id="chat-history-dropdown">
+    <div class="chat-history-header">Chats</div>
+    <div class="chat-history-body" id="chat-dropdown-list-container">
+        <div class="chat-history-empty">Loading conversations...</div>
+    </div>
+</div>
+            </div>
+
             <div class="header-user-profile-wrapper">
                 <div class="header-user-profile" onclick="toggleProfileDropdown(event)">
-                    <div class="avatar-placeholder <?php echo !empty($avatar) ? 'has-image' : ''; ?>" id="header-avatar-container">
-                        <?php if(!empty($avatar)) { ?>
-                            <img src="<?php echo $avatar; ?>" class="uploaded-avatar-img-header">
+                    <div class="avatar-placeholder <?php echo !empty($logged_in_avatar) ? 'has-image' : ''; ?>" id="header-avatar-container">
+                        <?php if(!empty($logged_in_avatar)) { ?>
+                            <img src="<?php echo $logged_in_avatar; ?>" class="uploaded-avatar-img-header">
                         <?php } else { ?>
                             <svg id="header-avatar-svg" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -140,6 +202,44 @@ $is_own_profile = ($logged_in_user === $username);
                     <a href="profile.php"><i class="fa-regular fa-user"></i> View Profile</a>
                     <a href="logout.php"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out</a>
                 </div>
+            </div>
+        </div>
+
+        <div class="gearbox-chat-popup" id="gearbox-chat-box" style="display: none;">
+            <div class="chat-header">
+                <div class="chat-header-user">
+                    <div class="chat-header-avatar"></div>
+                    <span class="chat-title-name">Chat</span>
+                </div>
+                <button class="chat-close-btn" onclick="closeGlobalChatBox()">&times;</button>
+            </div>
+            <div class="chat-messages-area" id="chat-messages-container"></div>
+            <div class="chat-emoji-picker-panel" id="chat-emoji-panel" style="display: none;">
+                <span onclick="appendGlobalEmoji('😀')">😀</span>
+                <span onclick="appendGlobalEmoji('😁')">😁</span>
+                <span onclick="appendGlobalEmoji('😂')">😂</span>
+                <span onclick="appendGlobalEmoji('😃')">😃</span>
+                <span onclick="appendGlobalEmoji('😄')">😄</span>
+                <span onclick="appendGlobalEmoji('😅')">😅</span>
+                <span onclick="appendGlobalEmoji('😆')">😆</span>
+                <span onclick="appendGlobalEmoji('😉')">😉</span>
+                <span onclick="appendGlobalEmoji('😊')">😊</span>
+                <span onclick="appendGlobalEmoji('😍')">😍</span>
+                <span onclick="appendGlobalEmoji('👍')">👍</span>
+                <span onclick="appendGlobalEmoji('❤️')">❤️</span>
+            </div>
+            <div class="chat-footer-input">
+                <div class="chat-input-wrapper">
+                    <input type="text" id="chat-message-input" placeholder="Type a message..." onkeydown="checkGlobalChatKey(event)">
+                    <button class="chat-emoji-trigger-btn" onclick="toggleGlobalEmojiPanel()">
+                        <i class="fa-regular fa-face-smile"></i>
+                    </button>
+                </div>
+                <button class="chat-send-btn" onclick="sendGlobalMessage()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L2 8.66l7.33 2.89L17 5l-6.55 7.67L13.33 22 22 2z"/>
+                    </svg>
+                </button>
             </div>
         </div>
     </header>
@@ -165,66 +265,72 @@ $is_own_profile = ($logged_in_user === $username);
             </div>
             
             <div class="fb-profile-info-bar">
-                
-                <div class="fb-avatar-overlap" <?php echo $is_own_profile ? 'onclick="triggerAvatarUpload()"' : ''; ?>>
-                    <div id="avatar-display-area" class="avatar-inner-content <?php echo !empty($avatar) ? 'has-image' : ''; ?>">
-                        <?php if(!empty($avatar)) { ?>
-                            <img src="<?php echo $avatar; ?>" class="uploaded-avatar-img">
-                        <?php } else { ?>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="#8a8a8a" stroke-width="1.5">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                <circle cx="12" cy="7" r="4"/>
-                            </svg>
-                        <?php } ?>
-                    </div>
-                    <?php if ($is_own_profile) { ?>
-                        <div class="avatar-hover-overlay">
-                            <i class="fa-solid fa-camera"></i>
-                        </div>
-                        <input type="file" id="avatar-file-input" accept="image/*" onchange="openCropModal(event, 'avatar')" style="display: none;">
-                    <?php } ?>
-                </div>
-                
-                <div class="fb-meta-details">
-                    <div class="editable-row">
-                        <h1 id="profile-name" onkeydown="checkEnterKey(event, this)" onblur="disableEditing(this, 'name')"><?php echo htmlspecialchars($username); ?></h1>
-                        <?php if ($is_own_profile) { ?>
-                            <span class="edit-icon-trigger" onclick="enableEditing('profile-name')">
-                                <i class="fa-regular fa-pen-to-square"></i>
-                            </span>
-                        <?php } ?>
-                    </div>
-                    <p class="fb-follower-counts"><span id="follower-number"><?php echo $followers; ?></span> followers • <span id="following-number"><?php echo $following_count; ?></span> following</p>
-                    <div class="editable-row">
-                        <p id="profile-bio" class="fb-bio-text" onkeydown="checkEnterKey(event, this)" onblur="disableEditing(this, 'bio')"><?php echo htmlspecialchars($bio); ?></p>
-                        <?php if ($is_own_profile) { ?>
-                            <span class="edit-icon-trigger" onclick="enableEditing('profile-bio')">
-                                <i class="fa-regular fa-pen-to-square"></i>
-                            </span>
-                        <?php } ?>
-                    </div>
-                </div>
-
-                <div class="fb-action-buttons">
-                    <?php if (!$is_own_profile) { ?>
-                        <button class="fb-btn fb-btn-monochrome-dark" onclick="toggleChatBox()" title="Message">
-                            <svg class="message-paper-plane" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M22 2L2 8.66l7.33 2.89L17 5l-6.55 7.67L13.33 22 22 2z"/>
-                            </svg>
-                        </button>
-                        <button id="follow-button" class="fb-btn <?php echo $is_following ? 'fb-btn-monochrome-dark' : 'fb-btn-monochrome-light'; ?>" onclick="handleFollowToggle()" title="<?php echo $is_following ? 'Unfollow' : 'Follow'; ?>">
-                            <i class="fa-solid <?php echo $is_following ? 'fa-user-check' : 'fa-user-plus'; ?>"></i>
-                        </button>
-                    <?php } ?>
-                </div>
-            </div>
-
-            <div class="fb-nav-tabs">
-                <div class="fb-tabs-left">
-                    <a href="#" class="fb-tab active">All</a>
-                </div>
-            </div>
+    
+    <div class="fb-avatar-overlap" <?php echo $is_own_profile ? 'onclick="triggerAvatarUpload()"' : ''; ?>>
+        <div id="avatar-display-area" class="avatar-inner-content <?php echo !empty($avatar) ? 'has-image' : ''; ?>">
+            <?php if(!empty($avatar)) { ?>
+                <img src="<?php echo $avatar; ?>" class="uploaded-avatar-img">
+            <?php } else { ?>
+                <svg viewBox="0 0 24 24" fill="none" stroke="#8a8a8a" stroke-width="1.5">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+            <?php } ?>
         </div>
+        <?php if ($is_own_profile) { ?>
+            <div class="avatar-hover-overlay">
+                <i class="fa-solid fa-camera"></i>
+            </div>
+            <input type="file" id="avatar-file-input" accept="image/*" onchange="openCropModal(event, 'avatar')" style="display: none;">
+        <?php } ?>
+    </div>
+    
+    <div class="fb-meta-details">
+        <div class="editable-row">
+            <h1 id="profile-name" onkeydown="checkEnterKey(event, this)" onblur="this.contentEditable='false'; disableEditing(this, 'name')"><?php echo htmlspecialchars($username); ?></h1>
+            <?php if ($is_own_profile) { ?>
+                <span class="edit-icon-trigger" onclick="var el=document.getElementById('profile-name'); el.contentEditable='true'; el.focus();">
+                    <i class="fa-regular fa-pen-to-square"></i>
+                </span>
+            <?php } ?>
+        </div>
+        <p class="fb-follower-counts"><span id="follower-number"><?php echo $followers; ?></span> followers • <span id="following-number"><?php echo $following_count; ?></span> following</p>
+        <div class="editable-row">
+            <p id="profile-bio" class="fb-bio-text" onkeydown="checkEnterKey(event, this)" onblur="this.contentEditable='false'; disableEditing(this, 'bio')"><?php echo htmlspecialchars($bio); ?></p>
+            <?php if ($is_own_profile) { ?>
+                <span class="edit-icon-trigger" onclick="var el=document.getElementById('profile-bio'); el.contentEditable='true'; el.focus();">
+                    <i class="fa-regular fa-pen-to-square"></i>
+                </span>
+            <?php } ?>
+        </div>
+    </div>
+
+    <div class="fb-action-buttons">
+        <?php if (!$is_own_profile) { ?>
+            <button type="button" class="fb-btn fb-btn-monochrome-dark" onclick="openFloatingChatFromDropdown('<?php echo htmlspecialchars($username); ?>', '<?php echo htmlspecialchars($avatar); ?>')" title="Message">
+                <svg class="message-paper-plane" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 2L2 8.66l7.33 2.89L17 5l-6.55 7.67L13.33 22 22 2z"/>
+                </svg>
+            </button>
+            
+            <form method="POST" style="display: inline-block;">
+    <input type="hidden" name="action" value="toggle_follow">
+    <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($username); ?>">
+    <button type="submit" id="follow-button" class="fb-btn <?php echo $is_following ? 'fb-btn-monochrome-dark' : 'fb-btn-monochrome-light'; ?>" title="<?php echo $is_following ? 'Unfollow' : 'Follow'; ?>">
+        <i class="fa-solid <?php echo $is_following ? 'fa-user-check' : 'fa-user-plus'; ?>"></i>
+    </button>
+</form>
+            </form>
+        <?php } ?>
+    </div>
+
+</div>
+
+<div class="fb-nav-tabs">
+    <div class="fb-tabs-left">
+        <a href="#" class="fb-tab active">All</a>
+    </div>
+</div>
 
         <div class="fb-body-grid">
             <div class="fb-left-column">
@@ -307,155 +413,6 @@ $is_own_profile = ($logged_in_user === $username);
         </div>
     <?php } ?>
 
-    <?php if (!$is_own_profile) { ?>
-        <div class="gearbox-chat-popup" id="gearbox-chat-box">
-            <div class="chat-header">
-                <div class="chat-header-user">
-                    <div class="chat-header-avatar">
-                        <?php if(!empty($avatar)) { ?>
-                            <img src="<?php echo $avatar; ?>" class="chat-avatar-img">
-                        <?php } else { ?>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                <circle cx="12" cy="7" r="4"/>
-                            </svg>
-                        <?php } ?>
-                    </div>
-                    <span class="chat-title-name"><?php echo htmlspecialchars($username); ?></span>
-                </div>
-                <button class="chat-close-btn" onclick="toggleChatBox()">&times;</button>
-            </div>
-            
-            <div class="chat-messages-area" id="chat-messages-container">
-                <div class="chat-bubble received">Hello! Welcome to GEARBOX messaging.</div>
-            </div>
-
-            <div class="chat-emoji-picker-panel" id="chat-emoji-panel">
-                <span onclick="appendEmojiToInput('😀')">😀</span>
-                <span onclick="appendEmojiToInput('😁')">😁</span>
-                <span onclick="appendEmojiToInput('😂')">😂</span>
-                <span onclick="appendEmojiToInput('😃')">😃</span>
-                <span onclick="appendEmojiToInput('😄')">😄</span>
-                <span onclick="appendEmojiToInput('😅')">😅</span>
-                <span onclick="appendEmojiToInput('😆')">😆</span>
-                <span onclick="appendEmojiToInput('😉')">😉</span>
-                <span onclick="appendEmojiToInput('😊')">😊</span>
-                <span onclick="appendEmojiToInput('😋')">😋</span>
-                <span onclick="appendEmojiToInput('😎')">😎</span>
-                <span onclick="appendEmojiToInput('😍')">😍</span>
-                <span onclick="appendEmojiToInput('😘')">😘</span>
-                <span onclick="appendEmojiToInput('🥰')">🥰</span>
-                <span onclick="appendEmojiToInput('😗')">😗</span>
-                <span onclick="appendEmojiToInput('😙')">😙</span>
-                <span onclick="appendEmojiToInput('😚')">😚</span>
-                <span onclick="appendEmojiToInput('☺️')">☺️</span>
-                <span onclick="appendEmojiToInput('🙂')">🙂</span>
-                <span onclick="appendEmojiToInput('🤗')">🤗</span>
-                <span onclick="appendEmojiToInput('🤩')">🤩</span>
-                <span onclick="appendEmojiToInput('🤔')">🤔</span>
-                <span onclick="appendEmojiToInput('🤨')">🤨</span>
-                <span onclick="appendEmojiToInput('😐')">😐</span>
-                <span onclick="appendEmojiToInput('😑')">😑</span>
-                <span onclick="appendEmojiToInput('😶')">😶</span>
-                <span onclick="appendEmojiToInput('🙄')">🙄</span>
-                <span onclick="appendEmojiToInput('😏')">😏</span>
-                <span onclick="appendEmojiToInput('😣')">😣</span>
-                <span onclick="appendEmojiToInput('😥')">😥</span>
-                <span onclick="appendEmojiToInput('😮')">😮</span>
-                <span onclick="appendEmojiToInput('🤐')">🤐</span>
-                <span onclick="appendEmojiToInput('😯')">😯</span>
-                <span onclick="appendEmojiToInput('😪')">😪</span>
-                <span onclick="appendEmojiToInput('😫')">😫</span>
-                <span onclick="appendEmojiToInput('😴')">😴</span>
-                <span onclick="appendEmojiToInput('😌')">😌</span>
-                <span onclick="appendEmojiToInput('😛')">😛</span>
-                <span onclick="appendEmojiToInput('😜')">😜</span>
-                <span onclick="appendEmojiToInput('😝')">😝</span>
-                <span onclick="appendEmojiToInput('🤤')">🤤</span>
-                <span onclick="appendEmojiToInput('😒')">😒</span>
-                <span onclick="appendEmojiToInput('😓')">😓</span>
-                <span onclick="appendEmojiToInput('😔')">😔</span>
-                <span onclick="appendEmojiToInput('😕')">😕</span>
-                <span onclick="appendEmojiToInput('🙃')">🙃</span>
-                <span onclick="appendEmojiToInput('🫠')">🫠</span>
-                <span onclick="appendEmojiToInput('🤑')">🤑</span>
-                <span onclick="appendEmojiToInput('😲')">😲</span>
-                <span onclick="appendEmojiToInput('☹️')">☹️</span>
-                <span onclick="appendEmojiToInput('🙁')">🙁</span>
-                <span onclick="appendEmojiToInput('😖')">😖</span>
-                <span onclick="appendEmojiToInput('😞')">😞</span>
-                <span onclick="appendEmojiToInput('😟')">😟</span>
-                <span onclick="appendEmojiToInput('😤')">😤</span>
-                <span onclick="appendEmojiToInput('😢')">😢</span>
-                <span onclick="appendEmojiToInput('😭')">😭</span>
-                <span onclick="appendEmojiToInput('😦')">😦</span>
-                <span onclick="appendEmojiToInput('😧')">😧</span>
-                <span onclick="appendEmojiToInput('😨')">😨</span>
-                <span onclick="appendEmojiToInput('😩')">😩</span>
-                <span onclick="appendEmojiToInput('🤯')">🤯</span>
-                <span onclick="appendEmojiToInput('😬')">😬</span>
-                <span onclick="appendEmojiToInput('😮‍💨')">😮‍💨</span>
-                <span onclick="appendEmojiToInput('😰')">😰</span>
-                <span onclick="appendEmojiToInput('😱')">😱</span>
-                <span onclick="appendEmojiToInput('🥵')">🥵</span>
-                <span onclick="appendEmojiToInput('🥶')">🥶</span>
-                <span onclick="appendEmojiToInput('😳')">😳</span>
-                <span onclick="appendEmojiToInput('🤪')">🤪</span>
-                <span onclick="appendEmojiToInput('😵')">😵</span>
-                <span onclick="appendEmojiToInput('🥴')">🥴</span>
-                <span onclick="appendEmojiToInput('😠')">😠</span>
-                <span onclick="appendEmojiToInput('😡')">😡</span>
-                <span onclick="appendEmojiToInput('🤬')">🤬</span>
-                <span onclick="appendEmojiToInput('😷')">😷</span>
-                <span onclick="appendEmojiToInput('🤒')">🤒</span>
-                <span onclick="appendEmojiToInput('🤕')">🤕</span>
-                <span onclick="appendEmojiToInput('🤢')">🤢</span>
-                <span onclick="appendEmojiToInput('🤮')">🤮</span>
-                <span onclick="appendEmojiToInput('🤧')">🤧</span>
-                <span onclick="appendEmojiToInput('😇')">😇</span>
-                <span onclick="appendEmojiToInput('🥳')">🥳</span>
-                <span onclick="appendEmojiToInput('🥸')">🥸</span>
-                <span onclick="appendEmojiToInput('🤫')">🤫</span>
-                <span onclick="appendEmojiToInput('🤭')">🤭</span>
-                <span onclick="appendEmojiToInput('🫣')">🫣</span>
-                <span onclick="appendEmojiToInput('🤫')">🤫</span>
-                <span onclick="appendEmojiToInput('🤥')">🤥</span>
-                <span onclick="appendEmojiToInput('🫥')">🫥</span>
-                <span onclick="appendEmojiToInput('😐')">😐</span>
-                <span onclick="appendEmojiToInput('🙌')">🙌</span>
-                <span onclick="appendEmojiToInput('👏')">👏</span>
-                <span onclick="appendEmojiToInput('👋')">👋</span>
-                <span onclick="appendEmojiToInput('👍')">👍</span>
-                <span onclick="appendEmojiToInput('👎')">👎</span>
-                <span onclick="appendEmojiToInput('👊')">👊</span>
-                <span onclick="appendEmojiToInput('✊')">✊</span>
-                <span onclick="appendEmojiToInput('✌️')">✌️</span>
-                <span onclick="appendEmojiToInput('👌')">👌</span>
-                <span onclick="appendEmojiToInput('✋')">✋</span>
-                <span onclick="appendEmojiToInput('💪')">💪</span>
-                <span onclick="appendEmojiToInput('🙏')">🙏</span>
-                <span onclick="appendEmojiToInput('❤️')">❤️</span>
-                <span onclick="appendEmojiToInput('🔥')">🔥</span>
-                <span onclick="appendEmojiToInput('✨')">✨</span>
-                <span onclick="appendEmojiToInput('⭐')">⭐</span>
-            </div>
-
-            <div class="chat-footer-input">
-                <div class="chat-input-wrapper">
-                    <input type="text" id="chat-message-input" placeholder="Type a message..." onkeydown="checkChatKey(event)">
-                    <button class="chat-emoji-trigger-btn" onclick="toggleEmojiPanel()" title="Choose an emoji">
-                        <i class="fa-regular fa-face-smile"></i>
-                    </button>
-                </div>
-                <button class="chat-send-btn" onclick="sendMessage()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 2L2 8.66l7.33 2.89L17 5l-6.55 7.67L13.33 22 22 2z"/>
-                    </svg>
-                </button>
-            </div>
-        </div>
-    <?php } ?>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
     <script>
         var cropper;
@@ -465,11 +422,178 @@ $is_own_profile = ($logged_in_user === $username);
         var chatPollingInterval;
 
         document.addEventListener('DOMContentLoaded', function() {
-            if (document.getElementById('gearbox-chat-box')) {
-                loadChatHistory();
-            }
             blendCoverBackground();
         });
+
+        function openFloatingChatFromDropdown(username, avatarUrl) {
+            var chatBox = document.getElementById('gearbox-chat-box');
+            if (!chatBox) return;
+            activeChatUser = username;
+            var nameLabel = chatBox.querySelector('.chat-title-name');
+            if (nameLabel) nameLabel.innerText = username;
+            var avatarImgContainer = chatBox.querySelector('.chat-header-avatar');
+            if (avatarImgContainer) {
+                if (avatarUrl && avatarUrl !== '') {
+                    avatarImgContainer.innerHTML = `<img src="${avatarUrl}" class="chat-avatar-img">`;
+                } else {
+                    avatarImgContainer.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>`;
+                }
+            }
+            chatBox.style.display = 'flex';
+            var chatDropdown = document.getElementById('chat-history-dropdown');
+            if (chatDropdown) chatDropdown.style.display = 'none';
+            loadGlobalChatMessages();
+            clearInterval(chatPollingInterval);
+            chatPollingInterval = setInterval(loadGlobalChatMessages, 2000);
+        }
+
+        function loadGlobalChatMessages() {
+            if (!activeChatUser) return;
+            var messagesArea = document.getElementById('chat-messages-container');
+            if (!messagesArea) return;
+            fetch('chat_handler.php?action=fetch&other_user=' + encodeURIComponent(activeChatUser))
+            .then(function(response) { return response.json(); })
+            .then(function(chatHistory) {
+                var wasAtBottom = messagesArea.scrollTop + messagesArea.clientHeight >= messagesArea.scrollHeight - 20;
+                messagesArea.innerHTML = '';
+                if (chatHistory.length === 0) {
+                    messagesArea.innerHTML = '<div class="chat-bubble received">Hello! Welcome to GEARBOX messaging.</div>';
+                    return;
+                }
+                chatHistory.forEach(function(chat) {
+                    var bubble = document.createElement('div');
+                    bubble.className = 'chat-bubble ' + chat.type;
+                    bubble.innerText = chat.message;
+                    messagesArea.appendChild(bubble);
+                });
+                if (wasAtBottom) {
+                    messagesArea.scrollTop = messagesArea.scrollHeight;
+                }
+            });
+        }
+
+        function sendGlobalMessage() {
+            var inputElement = document.getElementById('chat-message-input');
+            var emojiPanel = document.getElementById('chat-emoji-panel');
+            var messageText = inputElement.value.trim();
+            if (messageText === '' || !activeChatUser) return;
+            var formData = new FormData();
+            formData.append('receiver', activeChatUser);
+            formData.append('message', messageText);
+            fetch('chat_handler.php?action=send', {
+                method: 'POST',
+                body: formData
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(result) {
+                if (result.status === 'success') {
+                    inputElement.value = '';
+                    if(emojiPanel) emojiPanel.style.display = 'none';
+                    loadGlobalChatMessages();
+                }
+            });
+        }
+
+        function checkGlobalChatKey(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendGlobalMessage();
+            }
+        }
+
+        function toggleGlobalEmojiPanel() {
+            var emojiPanel = document.getElementById('chat-emoji-panel');
+            if (emojiPanel) {
+                emojiPanel.style.display = (emojiPanel.style.display === 'grid') ? 'none' : 'grid';
+            }
+        }
+
+        function appendGlobalEmoji(emoji) {
+            var inputElement = document.getElementById('chat-message-input');
+            if (inputElement) {
+                inputElement.value += emoji;
+                inputElement.focus();
+            }
+        }
+
+        function closeGlobalChatBox() {
+            var chatBox = document.getElementById('gearbox-chat-box');
+            var emojiPanel = document.getElementById('chat-emoji-panel');
+            if (chatBox) chatBox.style.display = 'none';
+            if (emojiPanel) emojiPanel.style.display = 'none';
+            clearInterval(chatPollingInterval);
+        }
+
+        function toggleChatHistoryDropdown(event) {
+    event.stopPropagation();
+    var dropdown = document.getElementById('chat-history-dropdown');
+    var profileDropdown = document.getElementById('profile-dropdown');
+    var hwDropdown = document.getElementById('hardware-dropdown');
+    var phoneDropdown = document.getElementById('phone-dropdown');
+    
+    if (profileDropdown) profileDropdown.style.display = 'none';
+    if (hwDropdown && hwDropdown.classList.contains('show')) hwDropdown.classList.remove('show');
+    if (phoneDropdown && phoneDropdown.classList.contains('show')) phoneDropdown.classList.remove('show');
+
+    if (dropdown.style.display === 'block') {
+        dropdown.style.display = 'none';
+    } else {
+        dropdown.style.display = 'block';
+        fetchLatestDropdownHistory();
+    }
+}
+
+function fetchLatestDropdownHistory() {
+    var container = document.getElementById('chat-dropdown-list-container');
+    if (!container) return;
+
+    fetch('fetch_chat_users.php')
+    .then(function(response) { return response.json(); })
+    .then(function(users) {
+        container.innerHTML = '';
+        
+        if (users.length === 0) {
+            container.innerHTML = '<div class="chat-history-empty">No recent conversations</div>';
+            return;
+        }
+
+        users.forEach(function(user) {
+            var row = document.createElement('div');
+            row.className = 'chat-history-item';
+            
+            var avatarUrl = user.avatar_path ? user.avatar_path : '';
+            var escapedUsername = user.username.replace(/'/g, "\\'");
+            
+            row.onclick = function() {
+                openFloatingChatFromDropdown(user.username, avatarUrl);
+            };
+
+            var avatarHtml = '';
+            if (avatarUrl !== '') {
+                avatarHtml = `<img src="${avatarUrl}">`;
+            } else {
+                avatarHtml = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                `;
+            }
+
+            row.innerHTML = `
+                <div class="chat-item-avatar">${avatarHtml}</div>
+                <div class="chat-item-info">
+                    <div class="chat-item-name">@${user.username}</div>
+                </div>
+            `;
+            container.appendChild(row);
+        });
+    });
+}
 
         function blendCoverBackground() {
             var coverImgElement = document.querySelector('.fb-cover-center-image');
@@ -499,6 +623,8 @@ $is_own_profile = ($logged_in_user === $username);
         function toggleProfileDropdown(event) {
             event.stopPropagation();
             var dropdown = document.getElementById('profile-dropdown');
+            var chatDropdown = document.getElementById('chat-history-dropdown');
+            if (chatDropdown) chatDropdown.style.display = 'none';
             if (dropdown.style.display === 'block') {
                 dropdown.style.display = 'none';
             } else {
@@ -511,13 +637,13 @@ $is_own_profile = ($logged_in_user === $username);
             var dropdown = document.getElementById('hardware-dropdown');
             var phoneDropdown = document.getElementById('phone-dropdown');
             var profileDropdown = document.getElementById('profile-dropdown');
-            
+            var chatDropdown = document.getElementById('chat-history-dropdown');
             if (profileDropdown) profileDropdown.style.display = 'none';
+            if (chatDropdown) chatDropdown.style.display = 'none';
             if (phoneDropdown) {
                 phoneDropdown.classList.remove('show');
                 setTimeout(function() { phoneDropdown.style.display = 'none'; }, 250);
             }
-            
             if (dropdown.classList.contains('show')) {
                 dropdown.classList.remove('show');
                 setTimeout(function() { if(!dropdown.classList.contains('show')) dropdown.style.display = 'none'; }, 250);
@@ -532,13 +658,13 @@ $is_own_profile = ($logged_in_user === $username);
             var dropdown = document.getElementById('phone-dropdown');
             var hwDropdown = document.getElementById('hardware-dropdown');
             var profileDropdown = document.getElementById('profile-dropdown');
-            
+            var chatDropdown = document.getElementById('chat-history-dropdown');
             if (profileDropdown) profileDropdown.style.display = 'none';
+            if (chatDropdown) chatDropdown.style.display = 'none';
             if (hwDropdown) {
                 hwDropdown.classList.remove('show');
                 setTimeout(function() { hwDropdown.style.display = 'none'; }, 250);
             }
-            
             if (dropdown.classList.contains('show')) {
                 dropdown.classList.remove('show');
                 setTimeout(function() { if(!dropdown.classList.contains('show')) dropdown.style.display = 'none'; }, 250);
@@ -552,6 +678,10 @@ $is_own_profile = ($logged_in_user === $username);
             var dropdown = document.getElementById('profile-dropdown');
             if (dropdown) {
                 dropdown.style.display = 'none';
+            }
+            var chatDropdown = document.getElementById('chat-history-dropdown');
+            if (chatDropdown) {
+                chatDropdown.style.display = 'none';
             }
             var hwDropdown = document.getElementById('hardware-dropdown');
             if (hwDropdown && hwDropdown.classList.contains('show')) {
@@ -577,11 +707,9 @@ $is_own_profile = ($logged_in_user === $username);
         function saveCustomLinkData() {
             var formData = new FormData();
             formData.append('field', 'custom_links');
-
             for (var i = 0; i < 3; i++) {
                 var urlVal = document.getElementById('modal-link-url-' + i).value.trim();
                 var titleVal = document.getElementById('modal-link-title-' + i).value.trim();
-
                 if (urlVal !== "" && titleVal !== "") {
                     if (!urlVal.startsWith('http://') && !urlVal.startsWith('https://')) {
                         urlVal = 'https://' + urlVal;
@@ -590,7 +718,6 @@ $is_own_profile = ($logged_in_user === $username);
                     formData.append('titles[]', titleVal);
                 }
             }
-
             fetch('save_profile.php', {
                 method: 'POST',
                 body: formData
@@ -600,11 +727,9 @@ $is_own_profile = ($logged_in_user === $username);
                 if(result === 'success') {
                     var linksContainer = document.getElementById('profile-links-list-container');
                     linksContainer.innerHTML = '';
-
                     for (var i = 0; i < 3; i++) {
                         var finalUrl = document.getElementById('modal-link-url-' + i).value.trim();
                         var finalTitle = document.getElementById('modal-link-title-' + i).value.trim();
-
                         if (finalUrl !== "" && finalTitle !== "") {
                             if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
                                 finalUrl = 'https://' + finalUrl;
@@ -625,163 +750,19 @@ $is_own_profile = ($logged_in_user === $username);
         }
         <?php } ?>
 
-        <?php if (!$is_own_profile) { ?>
-        function toggleChatBox() {
-            var chatBox = document.getElementById('gearbox-chat-box');
-            var emojiPanel = document.getElementById('chat-emoji-panel');
-            if (chatBox.style.display === 'flex') {
-                chatBox.style.display = 'none';
-                if(emojiPanel) emojiPanel.style.display = 'none';
-                clearInterval(chatPollingInterval);
-            } else {
-                chatBox.style.display = 'flex';
-                loadChatHistory();
-                chatPollingInterval = setInterval(loadChatHistory, 2000);
-            }
-        }
-
-        function toggleEmojiPanel() {
-            var emojiPanel = document.getElementById('chat-emoji-panel');
-            if (emojiPanel.style.display === 'grid') {
-                emojiPanel.style.display = 'none';
-            } else {
-                emojiPanel.style.display = 'grid';
-            }
-        }
-
-        function appendEmojiToInput(emoji) {
-            var inputElement = document.getElementById('chat-message-input');
-            inputElement.value += emoji;
-            inputElement.focus();
-        }
-
-        function sendMessage() {
-            var inputElement = document.getElementById('chat-message-input');
-            var emojiPanel = document.getElementById('chat-emoji-panel');
-            var messageText = inputElement.value.trim();
-            var receiverProfile = document.getElementById('profile-name').innerText.trim();
-            
-            if (messageText === '') return;
-
-            var formData = new FormData();
-            formData.append('receiver', receiverProfile);
-            formData.append('message', messageText);
-
-            fetch('chat_handler.php?action=send', {
-                method: 'POST',
-                body: formData
-            })
-            .then(function(response) { return response.json(); })
-            .then(function(result) {
-                if (result.status === 'success') {
-                    inputElement.value = '';
-                    if(emojiPanel) emojiPanel.style.display = 'none';
-                    loadChatHistory();
-                }
-            });
-        }
-
-        function checkChatKey(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                sendMessage();
-            }
-        }
-
-        function loadChatHistory() {
-            var receiverProfile = document.getElementById('profile-name').innerText.trim();
-            var messagesArea = document.getElementById('chat-messages-container');
-
-            fetch('chat_handler.php?action=fetch&other_user=' + encodeURIComponent(receiverProfile))
-            .then(function(response) { return response.json(); })
-            .then(function(chatHistory) {
-                var previousScrollHeight = messagesArea.scrollHeight;
-                var wasAtBottom = messagesArea.scrollTop + messagesArea.clientHeight >= messagesArea.scrollHeight - 20;
-
-                messagesArea.innerHTML = '';
-
-                if (chatHistory.length === 0) {
-                    messagesArea.innerHTML = '<div class="chat-bubble received">Hello! Welcome to GEARBOX messaging.</div>';
-                    return;
-                }
-
-                chatHistory.forEach(function(chat) {
-                    var bubble = document.createElement('div');
-                    bubble.className = 'chat-bubble ' + chat.type;
-                    bubble.innerText = chat.message;
-                    messagesArea.appendChild(bubble);
-                });
-
-                if (wasAtBottom || previousScrollHeight === 0) {
-                    messagesArea.scrollTop = messagesArea.scrollHeight;
-                }
-            });
-        }
-
-        function scrollToBottom() {
-            var messagesArea = document.getElementById('chat-messages-container');
-            messagesArea.scrollTop = messagesArea.scrollHeight;
-        }
-
-        function handleFollowToggle() {
-            var profileName = document.getElementById('profile-name').innerText;
-            var followButton = document.getElementById('follow-button');
-            var followerNumber = document.getElementById('follower-number');
-            var currentCount = parseInt(followerNumber.innerText);
-
-            var formData = new FormData();
-            formData.append('action', 'toggle_follow');
-            formData.append('profile_user', profileName);
-
-            fetch('save_profile.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(function(response) { return response.text(); })
-            .then(function(result) {
-                if (result === 'followed') {
-                    followButton.className = 'fb-btn fb-btn-monochrome-dark';
-                    followButton.innerHTML = '<i class="fa-solid fa-user-check"></i>';
-                    followButton.setAttribute('title', 'Unfollow');
-                    followerNumber.innerText = currentCount + 1;
-                } else if (result === 'unfollowed') {
-                    followButton.className = 'fb-btn fb-btn-monochrome-light';
-                    followButton.innerHTML = '<i class="fa-solid fa-user-plus"></i>';
-                    followButton.setAttribute('title', 'Follow');
-                    followerNumber.innerText = currentCount - 1;
-                }
-            });
-        }
-        <?php } ?>
-
-        function enableEditing(id) {
-            var element = document.getElementById(id);
-            element.setAttribute("contenteditable", "true");
-            element.focus();
-            
-            var range = document.createRange();
-            var selection = window.getSelection();
-            range.selectNodeContents(element);
-            range.collapse(false);
-            selection.removeAllRanges();
-            selection.addRange(range);
-        }
-
         function disableEditing(element, fieldType) {
             element.removeAttribute("contenteditable");
             var textValue = element.innerText;
-
             var formData = new FormData();
             formData.append('field', fieldType);
             formData.append('value', textValue);
-
             fetch('save_profile.php', {
                 method: 'POST',
                 body: formData
             }).then(function() {
                 if (fieldType === 'name') {
                     <?php if (!$is_own_profile) { ?>
-                        loadChatHistory();
+                        loadGlobalChatMessages();
                     <?php } ?>
                 }
             });
@@ -810,14 +791,11 @@ $is_own_profile = ($logged_in_user === $username);
                 reader.onload = function(e) {
                     imageElement.src = e.target.result;
                     modalPopup.style.display = 'flex';
-                    
                     if (cropper) {
                         cropper.destroy();
                     }
-                    
                     var aspect = (target === 'cover') ? (16 / 9) : (1 / 1);
                     document.getElementById('crop-modal-title').innerText = (target === 'cover') ? 'Crop Your Cover Photo' : 'Crop Your Profile Picture';
-                    
                     cropper = new Cropper(imageElement, {
                         aspectRatio: aspect,
                         viewMode: 1,
@@ -837,20 +815,16 @@ $is_own_profile = ($logged_in_user === $username);
 
         function saveCroppedImage() {
             if (!cropper) return;
-            
             var canvas;
             if (currentCropTarget === 'cover') {
                 canvas = cropper.getCroppedCanvas({ width: 1250, height: 703 });
             } else {
                 canvas = cropper.getCroppedCanvas({ width: 300, height: 300 });
             }
-            
             var base64Image = canvas.toDataURL();
-
             var formData = new FormData();
             formData.append('upload_type', currentCropTarget);
             formData.append('image_data', base64Image);
-
             fetch('save_profile.php', {
                 method: 'POST',
                 body: formData
@@ -862,21 +836,18 @@ $is_own_profile = ($logged_in_user === $username);
                         var tempCtx = canvas.getContext('2d');
                         var pixelData = tempCtx.getImageData(10, 10, 1, 1).data;
                         var detectedColor = 'rgb(' + pixelData[0] + ',' + pixelData[1] + ',' + pixelData[2] + ')';
-                        
                         document.querySelector('.fb-cover-photo-wrapper').style.backgroundColor = detectedColor;
                         document.getElementById('cover-display-area').innerHTML = '<div class="fb-cover-center-image" style="background-image: url(\'' + savedPath + '\');"></div>';
                     } else if (currentCropTarget === 'avatar') {
                         var displayArea = document.getElementById('avatar-display-area');
                         displayArea.classList.add("has-image");
                         displayArea.innerHTML = '<img src="' + savedPath + '" class="uploaded-avatar-img">';
-                        
                         var headerContainer = document.getElementById('header-avatar-container');
                         headerContainer.classList.add("has-image");
                         headerContainer.innerHTML = '<img src="' + savedPath + '" class="uploaded-avatar-img-header">';
                     }
                 }
             });
-            
             closeCropModal();
         }
 
@@ -884,16 +855,13 @@ $is_own_profile = ($logged_in_user === $username);
             var searchInput = document.getElementById('global-user-search-input');
             var resultsBox = document.getElementById('search-results-box');
             var queryValue = searchInput.value.trim();
-
             if (queryValue === '') {
                 resultsBox.style.display = 'none';
                 resultsBox.innerHTML = '';
                 return;
             }
-
             var formData = new FormData();
             formData.append('username', queryValue);
-
             fetch('search_user.php', {
                 method: 'POST',
                 body: formData
@@ -901,20 +869,17 @@ $is_own_profile = ($logged_in_user === $username);
             .then(function(response) { return response.json(); })
             .then(function(users) {
                 resultsBox.innerHTML = '';
-                
                 if (users.length === 0) {
                     resultsBox.innerHTML = '<div class="search-no-results">No results found</div>';
                     resultsBox.style.display = 'block';
                     return;
                 }
-
                 users.forEach(function(user) {
                     var row = document.createElement('div');
                     row.className = 'search-result-item';
                     row.onclick = function() {
                         window.location.href = 'profile.php?user=' + encodeURIComponent(user.username);
                     };
-
                     var avatarHtml = '';
                     if (user.avatar && user.avatar !== '') {
                         avatarHtml = `<img src="${user.avatar}" class="search-item-img">`;
@@ -926,7 +891,6 @@ $is_own_profile = ($logged_in_user === $username);
                             </svg>
                         `;
                     }
-
                     row.innerHTML = `
                         <div class="search-item-avatar">${avatarHtml}</div>
                         <div class="search-item-info">
@@ -936,7 +900,6 @@ $is_own_profile = ($logged_in_user === $username);
                     `;
                     resultsBox.appendChild(row);
                 });
-
                 resultsBox.style.display = 'block';
             });
         }
